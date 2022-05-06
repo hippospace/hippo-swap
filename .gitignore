@@ -1,0 +1,5 @@
+build
+.idea
+.coverage_map.mvcov
+.trace
+!.git/hooks/pre-commit
