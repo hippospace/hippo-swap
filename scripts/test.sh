@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 function run_test {
     printf "🚀🚀🚀Running Tests NOW\n"
