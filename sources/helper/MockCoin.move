@@ -5,6 +5,10 @@ module MockCoin {
     use AptosFramework::TypeInfo;
     use Std::ASCII;
 
+    spec module {
+        pragma verify = false;
+    }
+
     struct TokenSharedCapability<phantom TokenType> has key, store {
         mint: Coin::MintCapability<TokenType>,
         burn: Coin::BurnCapability<TokenType>,
