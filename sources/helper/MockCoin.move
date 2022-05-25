@@ -54,16 +54,15 @@ module MockCoin {
         Coin::burn<TokenType>(tokens, &cap.burn);
     }
 
-
-    #[test(admin = @HippoSwap, core_resource_account = @CoreResources)]
-    fun mint_mock_coin(admin: &signer, core_resource_account: &signer)  acquires TokenSharedCapability {
-        use AptosFramework::Genesis;
-        Genesis::setup(core_resource_account);
-
-        initialize<WETH>(admin, 18);
-        let x = mint<WETH>(10);
-        burn(x)
-    }
+//    #[test(admin = @HippoSwap, core_resource_account = @CoreResources)]
+//    fun mint_mock_coin(admin: &signer, core_resource_account: &signer)  acquires TokenSharedCapability {
+//        use AptosFramework::Genesis;
+//        Genesis::setup(core_resource_account);
+//
+//        initialize<WETH>(admin, 18);
+//        let x = mint<WETH>(10);
+//        burn(x)
+//    }
 }
 
 }

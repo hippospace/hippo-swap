@@ -8,8 +8,6 @@ module HippoSwap::HippoConfig {
         @HippoSwapFee
     }
 
-
-
     #[test(admin = @HippoSwap, core_resource_account = @CoreResources)]
     fun addresses() {
         admin_address();

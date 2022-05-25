@@ -72,19 +72,19 @@ module HippoSwap::StableCurveSwap {
         MockCoin::mint<Money>(20)
     }
 
-    #[test(admin = @HippoSwap, core_resource_account = @CoreResources)]
-    fun mint_mock_coin(admin: &signer) acquires LPCapability {
-        use HippoSwap::MockCoin;
-        MockCoin::initialize<HippoSwap::MockCoin::WETH>(admin, 9);
-        MockCoin::initialize<HippoSwap::MockCoin::WDAI>(admin, 9);
-        initialize_coin<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
-            admin,
-            ASCII::string(b"Curve:WETH-WDAI"),
-            ASCII::string(b"WEWD")
-        );
-        let coin = mint<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(100);
-        burn(coin)
-    }
+//    #[test(admin = @HippoSwap, core_resource_account = @CoreResources)]
+//    fun mint_mock_coin(admin: &signer) acquires LPCapability {
+//        use HippoSwap::MockCoin;
+//        MockCoin::initialize<HippoSwap::MockCoin::WETH>(admin, 9);
+//        MockCoin::initialize<HippoSwap::MockCoin::WDAI>(admin, 9);
+//        initialize_coin<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
+//            admin,
+//            ASCII::string(b"Curve:WETH-WDAI"),
+//            ASCII::string(b"WEWD")
+//        );
+//        let coin = mint<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(100);
+//        burn(coin)
+//    }
 
     // Swap utilities
 
@@ -198,118 +198,118 @@ module HippoSwap::StableCurveSwap {
     }
 
 
-    // Tests
-
-    #[test_only]
-    fun genesis(core: &signer){
-        use AptosFramework::Genesis;
-        Genesis::setup(core);
-    }
-
-    #[test_only]
-    fun update_time(account: &signer, time: u64) {
-        use AptosFramework::Timestamp;
-        Timestamp::update_global_time(account, @0x1000010, time);
-    }
-
-    #[test_only]
-    fun init_lp_token(admin: &signer, core: &signer){
-
-        use HippoSwap::MockCoin;
-        genesis(core);
-
-        MockCoin::initialize<MockCoin::WETH>(admin, 18);
-        MockCoin::initialize<MockCoin::WDAI>(admin, 18);
-        initialize<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
-            admin,
-            ASCII::string(b"Curve:WETH-WDAI"),
-            ASCII::string(b"WEWD")
-        );
-
-    }
-
-    #[test(admin = @HippoSwap, core = @CoreResources)]
-    fun mint_lptoken_coin(admin: &signer, core: &signer) acquires SwapPair, LPCapability {
-        use Std::Signer;
-        use HippoSwap::MockCoin;
-        init_lp_token(admin, core);
-        let x = MockCoin::mint<MockCoin::WETH>(10);
-        let y = MockCoin::mint<MockCoin::WDAI>(10);
-        let liquidity = deposit_liquidity(x, y);
-        let (x, y) = remove_liquidity(liquidity);
-        Coin::deposit(Signer::address_of(admin), x);
-        Coin::deposit(Signer::address_of(admin), y);
-    }
-
-    #[test(admin = @HippoSwap,  core = @CoreResources)]
-    #[expected_failure(abort_code = 2007)]
-    public fun fail_add_liquidity(admin: &signer, core: &signer) acquires SwapPair, LPCapability {
-        use Std::Signer;
-        use HippoSwap::MockCoin;
-
-        genesis(core);
-
-        MockCoin::initialize<HippoSwap::MockCoin::WETH>(admin, 18);
-        MockCoin::initialize<HippoSwap::MockCoin::WDAI>(admin, 18);
-        initialize<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
-            admin,
-            ASCII::string(b"Curve:WETH-WDAI"),
-            ASCII::string(b"WEWD")
-        );
-        let x = MockCoin::mint<MockCoin::WETH>(0);
-        let y = MockCoin::mint<MockCoin::WDAI>(0);
-        let liquidity = deposit_liquidity(x, y);
-        Coin::deposit(Signer::address_of(admin), liquidity)
-    }
-
-    #[test(admin = @HippoSwap)]
-    #[expected_failure(abort_code = 2000)]
-    public fun fail_x(admin: &signer) {
-        initialize<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
-            admin,
-            ASCII::string(b"Curve:WETH-WDAI"),
-            ASCII::string(b"WEWD")
-        );
-    }
-
-    #[test(admin = @HippoSwap)]
-    #[expected_failure(abort_code = 2000)]
-    public fun fail_y(admin: &signer) {
-        use HippoSwap::MockCoin;
-        MockCoin::initialize<HippoSwap::MockCoin::WETH>(admin, 18);
-        initialize<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
-            admin,
-            ASCII::string(b"Curve:WETH-WDAI"),
-            ASCII::string(b"WEWD")
-        );
-    }
-
-    #[test(admin = @HippoSwap, core = @CoreResources, vm = @0)]
-    fun test_swap_pair_case_A(admin: &signer, core: &signer, vm: &signer) acquires SwapPair {
-        use HippoSwap::MockCoin;
-        init_lp_token(admin, core);
-        let swap_pair = borrow_global_mut<SwapPair<MockCoin::WETH, MockCoin::WDAI>>(HippoConfig::admin_address());
-        update_time(vm, 0x1100000);
-        let block_timestamp = (Timestamp::now_seconds() as u128);
-        swap_pair.future_A_time = block_timestamp + 2;
-        swap_pair.future_A = 20;
-        swap_pair.initial_A = 4;
-        let k = get_raw_A<MockCoin::WETH, MockCoin::WDAI>();
-        Std::Debug::print(&k)
-    }
-
-    #[test(admin = @HippoSwap, core = @CoreResources, vm = @0)]
-    fun test_swap_pair_case_B(admin: &signer, core: &signer, vm: &signer) acquires SwapPair {
-        use HippoSwap::MockCoin;
-        init_lp_token(admin, core);
-        let swap_pair = borrow_global_mut<SwapPair<MockCoin::WETH, MockCoin::WDAI>>(HippoConfig::admin_address());
-        update_time(vm, 0x1100000);
-        let block_timestamp = (Timestamp::now_seconds() as u128);
-        swap_pair.future_A_time = block_timestamp + 2;
-        swap_pair.future_A = 4;
-        swap_pair.initial_A = 20;
-        let k = get_raw_A<MockCoin::WETH, MockCoin::WDAI>();
-        Std::Debug::print(&k);
-    }
+//    // Tests
+//
+//    #[test_only]
+//    fun genesis(core: &signer){
+//        use AptosFramework::Genesis;
+//        Genesis::setup(core);
+//    }
+//
+//    #[test_only]
+//    fun update_time(account: &signer, time: u64) {
+//        use AptosFramework::Timestamp;
+//        Timestamp::update_global_time(account, @0x1000010, time);
+//    }
+//
+//    #[test_only]
+//    fun init_lp_token(admin: &signer, core: &signer){
+//
+//        use HippoSwap::MockCoin;
+//        genesis(core);
+//
+//        MockCoin::initialize<MockCoin::WETH>(admin, 18);
+//        MockCoin::initialize<MockCoin::WDAI>(admin, 18);
+//        initialize<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
+//            admin,
+//            ASCII::string(b"Curve:WETH-WDAI"),
+//            ASCII::string(b"WEWD")
+//        );
+//
+//    }
+//
+//    #[test(admin = @HippoSwap, core = @CoreResources)]
+//    fun mint_lptoken_coin(admin: &signer, core: &signer) acquires SwapPair, LPCapability {
+//        use Std::Signer;
+//        use HippoSwap::MockCoin;
+//        init_lp_token(admin, core);
+//        let x = MockCoin::mint<MockCoin::WETH>(10);
+//        let y = MockCoin::mint<MockCoin::WDAI>(10);
+//        let liquidity = deposit_liquidity(x, y);
+//        let (x, y) = remove_liquidity(liquidity);
+//        Coin::deposit(Signer::address_of(admin), x);
+//        Coin::deposit(Signer::address_of(admin), y);
+//    }
+//
+//    #[test(admin = @HippoSwap,  core = @CoreResources)]
+//    #[expected_failure(abort_code = 2007)]
+//    public fun fail_add_liquidity(admin: &signer, core: &signer) acquires SwapPair, LPCapability {
+//        use Std::Signer;
+//        use HippoSwap::MockCoin;
+//
+//        genesis(core);
+//
+//        MockCoin::initialize<HippoSwap::MockCoin::WETH>(admin, 18);
+//        MockCoin::initialize<HippoSwap::MockCoin::WDAI>(admin, 18);
+//        initialize<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
+//            admin,
+//            ASCII::string(b"Curve:WETH-WDAI"),
+//            ASCII::string(b"WEWD")
+//        );
+//        let x = MockCoin::mint<MockCoin::WETH>(0);
+//        let y = MockCoin::mint<MockCoin::WDAI>(0);
+//        let liquidity = deposit_liquidity(x, y);
+//        Coin::deposit(Signer::address_of(admin), liquidity)
+//    }
+//
+//    #[test(admin = @HippoSwap)]
+//    #[expected_failure(abort_code = 2000)]
+//    public fun fail_x(admin: &signer) {
+//        initialize<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
+//            admin,
+//            ASCII::string(b"Curve:WETH-WDAI"),
+//            ASCII::string(b"WEWD")
+//        );
+//    }
+//
+//    #[test(admin = @HippoSwap)]
+//    #[expected_failure(abort_code = 2000)]
+//    public fun fail_y(admin: &signer) {
+//        use HippoSwap::MockCoin;
+//        MockCoin::initialize<HippoSwap::MockCoin::WETH>(admin, 18);
+//        initialize<HippoSwap::MockCoin::WETH, HippoSwap::MockCoin::WDAI>(
+//            admin,
+//            ASCII::string(b"Curve:WETH-WDAI"),
+//            ASCII::string(b"WEWD")
+//        );
+//    }
+//
+//    #[test(admin = @HippoSwap, core = @CoreResources, vm = @0)]
+//    fun test_swap_pair_case_A(admin: &signer, core: &signer, vm: &signer) acquires SwapPair {
+//        use HippoSwap::MockCoin;
+//        init_lp_token(admin, core);
+//        let swap_pair = borrow_global_mut<SwapPair<MockCoin::WETH, MockCoin::WDAI>>(HippoConfig::admin_address());
+//        update_time(vm, 0x1100000);
+//        let block_timestamp = (Timestamp::now_seconds() as u128);
+//        swap_pair.future_A_time = block_timestamp + 2;
+//        swap_pair.future_A = 20;
+//        swap_pair.initial_A = 4;
+//        let k = get_raw_A<MockCoin::WETH, MockCoin::WDAI>();
+//        Std::Debug::print(&k)
+//    }
+//
+//    #[test(admin = @HippoSwap, core = @CoreResources, vm = @0)]
+//    fun test_swap_pair_case_B(admin: &signer, core: &signer, vm: &signer) acquires SwapPair {
+//        use HippoSwap::MockCoin;
+//        init_lp_token(admin, core);
+//        let swap_pair = borrow_global_mut<SwapPair<MockCoin::WETH, MockCoin::WDAI>>(HippoConfig::admin_address());
+//        update_time(vm, 0x1100000);
+//        let block_timestamp = (Timestamp::now_seconds() as u128);
+//        swap_pair.future_A_time = block_timestamp + 2;
+//        swap_pair.future_A = 4;
+//        swap_pair.initial_A = 20;
+//        let k = get_raw_A<MockCoin::WETH, MockCoin::WDAI>();
+//        Std::Debug::print(&k);
+//    }
 
 }

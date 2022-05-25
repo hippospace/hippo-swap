@@ -68,51 +68,51 @@ module HippoSwap::StableCurveNumeral {
         }
     }
 
-    #[test]
-    fun test_get_D() {
-        let s = get_D(100, 400, 1000);
-        Std::Debug::print(&s);
-    }
-
-    #[test]
-    fun test_get_D_2() {
-        let s = get_D(101010, 200, 50);
-        Std::Debug::print(&s);
-    }
-
-    #[test]
-    fun test_get_D_3() {
-        let s = get_D(10074, 10074, 50);
-        Std::Debug::print(&s);
-    }
-
-    #[test]
-    fun test_iter_loop_D() {
-        let s = get_D(100, 200, 1000);
-        Std::Debug::print(&s);
-    }
-
-    #[test]
-    fun test_get_D4() {
-        let s = get_D(100, 300, 90);
-        Std::Debug::print(&s);
-    }
-
-
-    #[test]
-    #[expected_failure(abort_code = 2020)]
-    public fun fail_recur_D() {
-        recur_D(1, 1, 1, 1, 1, 1, 1);
-    }
-
-    #[test]
-    public fun recur_D_ok_1() {
-        recur_D(100, 2, 2, 1, 100, 1, 10);
-    }
-
-
-    #[test]
-    fun test_redur_D_ok_2() {
-        recur_D(101210, 101010, 200, 101210, 100, 1, 10);
-    }
+//    #[test]
+//    fun test_get_D() {
+//        let s = get_D(100, 400, 1000);
+//        Std::Debug::print(&s);
+//    }
+//
+//    #[test]
+//    fun test_get_D_2() {
+//        let s = get_D(101010, 200, 50);
+//        Std::Debug::print(&s);
+//    }
+//
+//    #[test]
+//    fun test_get_D_3() {
+//        let s = get_D(10074, 10074, 50);
+//        Std::Debug::print(&s);
+//    }
+//
+//    #[test]
+//    fun test_iter_loop_D() {
+//        let s = get_D(100, 200, 1000);
+//        Std::Debug::print(&s);
+//    }
+//
+//    #[test]
+//    fun test_get_D4() {
+//        let s = get_D(100, 300, 90);
+//        Std::Debug::print(&s);
+//    }
+//
+//
+//    #[test]
+//    #[expected_failure(abort_code = 2020)]
+//    public fun fail_recur_D() {
+//        recur_D(1, 1, 1, 1, 1, 1, 1);
+//    }
+//
+//    #[test]
+//    public fun recur_D_ok_1() {
+//        recur_D(100, 2, 2, 1, 100, 1, 10);
+//    }
+//
+//
+//    #[test]
+//    fun test_redur_D_ok_2() {
+//        recur_D(101210, 101010, 200, 101210, 100, 1, 10);
+//    }
 }
