@@ -40,16 +40,6 @@ module HippoSwap::CPSwap {
     /// The LP Token type
     struct LPToken<phantom T0, phantom T1> has key {}
 
-//    /// Struct that stores the balance of each token in a LP tokens pair.
-//    /// For example, we might have swap from BTC <-> ETH and BTC <-> USDT
-//    /// then the balance stored for BTC should be counted separately as
-//    ///     balance of BTC in BTC-ETH
-//    ///     balance of BTC in BTC-USDT
-//    /// The current representation use `LPToken` as another key
-//    struct GenericTokenBalance<phantom T, phantom LPToken> has key {
-//        coin: Coin::Coin<T>
-//    }
-
     /// Stores the metadata required for the token pairs
     struct TokenPairMetadata<phantom T0, phantom T1> has key {
         /// Lock for mint and burn

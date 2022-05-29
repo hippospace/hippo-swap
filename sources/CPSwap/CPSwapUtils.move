@@ -21,4 +21,11 @@ module HippoSwap::CPSwapUtils {
         let denominator = SafeMath::mul((reserve_in as u128), 1000u128) + amount_in_with_fee;
         (SafeMath::div(numerator, denominator) as u64)
     }
+
+    #[test]
+    fun test_get_amount_out() {
+        let a = get_amount_out(100, 10, 10);
+        Std::Debug::print(&a);
+        assert!(a > 0, 0);
+    }
 }
