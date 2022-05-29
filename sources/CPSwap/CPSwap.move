@@ -14,7 +14,6 @@ module HippoSwap::CPSwap {
 
     const MODULE_ADMIN: address = @HippoSwap;
     const MINIMUM_LIQUIDITY: u128 = 1000;
-    const LIQUIDITY_LOCK: address = @0x1;
     const BALANCE_MAX: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF; // 2**112
 
     // List of errors
@@ -65,7 +64,7 @@ module HippoSwap::CPSwap {
     }
 
     /// Stores the reservation info required for the token pairs
-    struct TokenPairReserve<phantom X: key, phantom Y: key> has key {
+    struct TokenPairReserve<phantom X, phantom Y> has key {
         reserve_x: u64,
         reserve_y: u64,
         block_timestamp_last: u64
@@ -73,24 +72,22 @@ module HippoSwap::CPSwap {
 
     // ================= Init functions ========================
     /// Create the specified token pair
-    public fun create_token_pair<X: key, Y: key>(
-        sender: &signer,
+    public fun create_token_pair<X, Y>(
+        admin: &signer,
         fee_to: address,
         fee_on: bool,
         lp_name: vector<u8>,
         lp_symbol: vector<u8>
     ) {
-        // ensure sorted to avoid duplicated token pairs
-        assert!(Utils::is_tokens_sorted<X, Y>(), ERROR_TOKENS_NOT_SORTED);
-
-        let sender_addr = Signer::address_of(sender);
+        let sender_addr = Signer::address_of(admin);
         assert!(sender_addr == MODULE_ADMIN, ERROR_NOT_CREATOR);
 
         assert!(!exists<TokenPairReserve<X, Y>>(sender_addr), ERROR_ALREADY_INITIALIZED);
+        assert!(!exists<TokenPairReserve<Y, X>>(sender_addr), ERROR_ALREADY_INITIALIZED);
 
         // now we init the LP token
         let (mint_cap, burn_cap) = Coin::initialize<LPToken<X, Y>>(
-            sender,
+            admin,
             ASCII::string(lp_name),
             ASCII::string(lp_symbol),
             8,
@@ -98,7 +95,7 @@ module HippoSwap::CPSwap {
         );
 
         move_to<TokenPairReserve<X, Y>>(
-            sender,
+            admin,
             TokenPairReserve {
                 reserve_x: 0,
                 reserve_y: 0,
@@ -107,7 +104,7 @@ module HippoSwap::CPSwap {
         );
 
         move_to<TokenPairMetadata<X, Y>>(
-            sender,
+            admin,
             TokenPairMetadata {
                 locked: false,
                 creator: sender_addr,
@@ -121,6 +118,9 @@ module HippoSwap::CPSwap {
                 burn_cap
             }
         );
+
+        // create LP CoinStore for admin, which is needed as a lock for minimum_liquidity
+        Coin::register_internal<LPToken<X,Y>>(admin);
     }
 
     /// The init process for a sender. One must call this function first
@@ -131,7 +131,7 @@ module HippoSwap::CPSwap {
 
     // ====================== Getters ===========================
     /// Get the current reserves of T0 and T1 with the latest updated timestamp
-    public fun get_reserves<X: key, Y: key>(): (u64, u64, u64) acquires TokenPairReserve {
+    public fun get_reserves<X, Y>(): (u64, u64, u64) acquires TokenPairReserve {
         let reserve = borrow_global<TokenPairReserve<X, Y>>(MODULE_ADMIN);
         (
             reserve.reserve_x,
@@ -142,12 +142,12 @@ module HippoSwap::CPSwap {
 
     /// Obtain the LP token balance of `addr`.
     /// This method can only be used to check other users' balance.
-    public fun lp_balance<X: key, Y: key>(addr: address): u64 {
+    public fun lp_balance<X, Y>(addr: address): u64 {
         Coin::balance<LPToken<X, Y>>(addr)
     }
 
     /// The amount of balance currently in pools of the liquidity pair
-    public fun token_balances<X: key, Y: key>(): (u64, u64) acquires TokenPairMetadata {
+    public fun token_balances<X, Y>(): (u64, u64) acquires TokenPairMetadata {
         let meta =
             borrow_global<TokenPairMetadata<X, Y>>(MODULE_ADMIN);
         token_balances_metadata<X, Y>(meta)
@@ -156,7 +156,7 @@ module HippoSwap::CPSwap {
     // ===================== Update functions ======================
     /// Add more liquidity to token types. This method explicitly assumes the
     /// min of both tokens are 0.
-    public fun add_liquidity<X: key, Y: key>(
+    public fun add_liquidity<X, Y>(
         sender: &signer,
         amount_x: u64,
         amount_y: u64
@@ -187,7 +187,7 @@ module HippoSwap::CPSwap {
 
     /// Add more liquidity to token types. This method explicitly assumes the
     /// min of both tokens are 0.
-    public fun add_liquidity_direct<X: key, Y: key>(
+    public fun add_liquidity_direct<X, Y>(
         x: Coin::Coin<X>,
         y: Coin::Coin<Y>,
     ): (Coin::Coin<X>, Coin::Coin<Y>, Coin::Coin<LPToken<X, Y>>) acquires TokenPairReserve, TokenPairMetadata {
@@ -219,7 +219,7 @@ module HippoSwap::CPSwap {
     }
 
     /// Remove liquidity to token types.
-    public fun remove_liquidity<X: key, Y: key>(
+    public fun remove_liquidity<X, Y>(
         sender: &signer,
         liquidity: u64,
         amount_x_min: u64,
@@ -238,7 +238,7 @@ module HippoSwap::CPSwap {
     }
 
     /// Remove liquidity to token types.
-    public fun remove_liquidity_direct<X: key, Y: key>(
+    public fun remove_liquidity_direct<X, Y>(
         liquidity: Coin::Coin<LPToken<X, Y>>,
         amount_x_min: u64,
         amount_y_min: u64
@@ -253,7 +253,7 @@ module HippoSwap::CPSwap {
     }
 
     /// Swap X to Y, X is in and Y is out. This method assumes amount_out_min is 0
-    public fun swap_x_to_exact_y<X: key, Y: key>(
+    public fun swap_x_to_exact_y<X, Y>(
         sender: &signer,
         amount_in: u64,
         to: address
@@ -267,7 +267,7 @@ module HippoSwap::CPSwap {
     }
 
     /// Swap X to Y, X is in and Y is out. This method assumes amount_out_min is 0
-    public fun swap_x_to_exact_y_direct<X: key, Y: key>(
+    public fun swap_x_to_exact_y_direct<X, Y>(
         coins_in: Coin::Coin<X>
     ): (Coin::Coin<X>, Coin::Coin<Y>) acquires TokenPairReserve, TokenPairMetadata {
         let amount_in = Coin::value<X>(&coins_in);
@@ -280,7 +280,7 @@ module HippoSwap::CPSwap {
     }
 
     /// Swap Y to X, Y is in and X is out. This method assumes amount_out_min is 0
-    public fun swap_y_to_exact_x<X: key, Y: key>(
+    public fun swap_y_to_exact_x<X, Y>(
         sender: &signer,
         amount_in: u64,
         to: address
@@ -294,7 +294,7 @@ module HippoSwap::CPSwap {
     }
 
     /// Swap Y to X, Y is in and X is out. This method assumes amount_out_min is 0
-    public fun swap_y_to_exact_x_direct<X: key, Y: key>(
+    public fun swap_y_to_exact_x_direct<X, Y>(
         coins_in: Coin::Coin<Y>
     ): (Coin::Coin<X>, Coin::Coin<Y>) acquires TokenPairReserve, TokenPairMetadata {
         let amount_in = Coin::value<Y>(&coins_in);
@@ -307,7 +307,7 @@ module HippoSwap::CPSwap {
     }
 
     // ======================= Internal Functions ==============================
-    fun swap<X: key, Y: key>(
+    fun swap<X, Y>(
         amount_x_out: u64,
         amount_y_out: u64
     ): (Coin::Coin<X>, Coin::Coin<Y>) acquires TokenPairReserve, TokenPairMetadata {
@@ -362,7 +362,7 @@ module HippoSwap::CPSwap {
 
     /// Mint LP Token.
     /// This low-level function should be called from a contract which performs important safety checks
-    fun mint<X: key, Y: key>(): Coin::Coin<LPToken<X, Y>> acquires TokenPairReserve, TokenPairMetadata {
+    fun mint<X, Y>(): Coin::Coin<LPToken<X, Y>> acquires TokenPairReserve, TokenPairMetadata {
         let metadata = borrow_global_mut<TokenPairMetadata<X, Y>>(MODULE_ADMIN);
 
         // Lock it, reentrancy protection
@@ -385,7 +385,7 @@ module HippoSwap::CPSwap {
                 MINIMUM_LIQUIDITY
             );
             // permanently lock the first MINIMUM_LIQUIDITY tokens
-            mint_lp_to<X, Y>(LIQUIDITY_LOCK, (MINIMUM_LIQUIDITY as u64), &metadata.mint_cap);
+            mint_lp_to<X, Y>(MODULE_ADMIN, (MINIMUM_LIQUIDITY as u64), &metadata.mint_cap);
             l
         } else {
             Math::min(
@@ -419,7 +419,7 @@ module HippoSwap::CPSwap {
         lp
     }
 
-    fun burn<X: key, Y: key>(): (Coin::Coin<X>, Coin::Coin<Y>) acquires TokenPairMetadata, TokenPairReserve {
+    fun burn<X, Y>(): (Coin::Coin<X>, Coin::Coin<Y>) acquires TokenPairMetadata, TokenPairReserve {
         let metadata = borrow_global_mut<TokenPairMetadata<X, Y>>(MODULE_ADMIN);
 
         // Lock it, reentrancy protection
@@ -464,7 +464,7 @@ module HippoSwap::CPSwap {
         (w_x, w_y)
     }
 
-    fun update<X: key, Y: key>(balance_x: u64, balance_y: u64, reserve: &mut TokenPairReserve<X, Y>) {
+    fun update<X, Y>(balance_x: u64, balance_y: u64, reserve: &mut TokenPairReserve<X, Y>) {
         assert!(
             (balance_x as u128) <= BALANCE_MAX && (balance_y as u128) <= BALANCE_MAX,
             ERROR_OVERFLOW
@@ -529,38 +529,38 @@ module HippoSwap::CPSwap {
         Coin::merge(&mut metadata.lp, coins);
     }
 
-    fun deposit_x<X: key, Y: key>(amount: Coin::Coin<X>) acquires TokenPairMetadata {
+    fun deposit_x<X, Y>(amount: Coin::Coin<X>) acquires TokenPairMetadata {
         let metadata =
             borrow_global_mut<TokenPairMetadata<X, Y>>(MODULE_ADMIN);
         Coin::merge(&mut metadata.balance_x, amount);
     }
 
-    fun deposit_y<X: key, Y: key>(amount: Coin::Coin<Y>) acquires TokenPairMetadata {
+    fun deposit_y<X, Y>(amount: Coin::Coin<Y>) acquires TokenPairMetadata {
         let metadata =
             borrow_global_mut<TokenPairMetadata<X, Y>>(MODULE_ADMIN);
         Coin::merge(&mut metadata.balance_y, amount);
     }
 
     /// Extract `amount` from this contract
-    fun extract_x<X: key, Y: key>(amount: u64, metadata: &mut TokenPairMetadata<X, Y>): Coin::Coin<X> {
+    fun extract_x<X, Y>(amount: u64, metadata: &mut TokenPairMetadata<X, Y>): Coin::Coin<X> {
         assert!(Coin::value<X>(&metadata.balance_x) > amount, ERROR_INSUFFICIENT_AMOUNT);
         Coin::extract(&mut metadata.balance_x, amount)
     }
 
     /// Extract `amount` from this contract
-    fun extract_y<X: key, Y: key>(amount: u64, metadata: &mut TokenPairMetadata<X, Y>): Coin::Coin<Y> {
+    fun extract_y<X, Y>(amount: u64, metadata: &mut TokenPairMetadata<X, Y>): Coin::Coin<Y> {
         assert!(Coin::value<Y>(&metadata.balance_y) > amount, ERROR_INSUFFICIENT_AMOUNT);
         Coin::extract(&mut metadata.balance_y, amount)
     }
 
     /// Transfer `amount` from this contract to `recipient`
-    fun transfer_x<X: key, Y: key>(amount: u64, recipient: address, metadata: &mut TokenPairMetadata<X, Y>) {
+    fun transfer_x<X, Y>(amount: u64, recipient: address, metadata: &mut TokenPairMetadata<X, Y>) {
         let coins = extract_x(amount, metadata);
         Coin::deposit(recipient, coins);
     }
 
     /// Transfer `amount` from this contract to `recipient`
-    fun transfer_y<X: key, Y: key>(amount: u64, recipient: address, metadata: &mut TokenPairMetadata<X, Y>) {
+    fun transfer_y<X, Y>(amount: u64, recipient: address, metadata: &mut TokenPairMetadata<X, Y>) {
         let coins = extract_y(amount, metadata);
         Coin::deposit(recipient, coins);
     }
