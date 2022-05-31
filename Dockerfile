@@ -10,5 +10,4 @@ RUN useradd -ms /bin/bash hippo
 USER hippo
 
 # install move and aptos cli
-RUN cargo install --git https://github.com/move-language/move move-cli --branch main --features address32 && \
-    cargo install --git https://github.com/aptos-labs/aptos-core.git aptos
+RUN cargo install --git https://github.com/aptos-labs/aptos-core.git af-cli

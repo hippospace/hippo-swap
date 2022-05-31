@@ -1,15 +1,11 @@
 module HippoSwap::StableCurveNumeral {
 
-    use SmoothAptos::Math;
-
-    const PRECISION: u128 = 1000000000000000000;
-    // 10 ** 18
     const A_PRECISION: u128 = 100;
 
     const ERROR_SWAP_INVALID_DERIVIATION: u64 = 2020;
 
 
-    public fun raw_A(future_A_time: u128, future_A: u128, initial_A_time: u128, initial_A: u128, timestamp: u128): u128 {
+    public fun raw_A(future_A_time: u64, future_A: u64, initial_A_time: u64, initial_A: u64, timestamp: u64): u64 {
         if ( timestamp < future_A_time ) {
             if ( future_A < initial_A ) {
                 initial_A - (initial_A - future_A) * (timestamp - initial_A_time) / (future_A_time - initial_A_time)
@@ -17,22 +13,6 @@ module HippoSwap::StableCurveNumeral {
                 initial_A + (future_A - initial_A) * (timestamp - initial_A_time) / (future_A_time - initial_A_time)
             }
         } else { future_A }
-    }
-
-
-    public fun precision_multiplier(decimal: u64): u128 {
-        Math::pow(10, 18) / Math::pow(10, decimal)
-    }
-
-    public fun rates(x: u64, y: u64): (u128, u128) {
-        (
-            precision_multiplier(x) * Math::pow(10, 18),
-            precision_multiplier(y) * Math::pow(10, 18)
-        )
-    }
-
-    public fun xp_mem(x_reserve: u64, y_reserve: u64, rate_x: u128, rate_y: u128): (u128, u128) {
-        (rate_x * (x_reserve as u128) / PRECISION, rate_y * (y_reserve as u128) / PRECISION)
     }
 
     fun recur_D(d: u128, x: u128, y: u128, s: u128, ann: u128, iter: u128, end: u128): u128 {
@@ -59,13 +39,28 @@ module HippoSwap::StableCurveNumeral {
     ///
     ///  D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n - 1)
     ///
-    public fun get_D(x: u128, y: u128, amp: u128): u128 {
+    public fun get_D(x: u128, y: u128, amp: u64): u128 {
         let s = x + y;
         if ( s == 0 ) { s
         } else {
-            let (d, ann, iter, end) = (s, amp * 2, 0, 255);
+            let (d, ann, iter, end) = (s, (amp as u128) * 2, 0, 255);
             recur_D(d, x, y, s, ann, iter, end)
         }
+    }
+
+    #[test_only]
+    fun time(offset_seconds: u64): u64 {
+        let epoch = 1653289287000000;  // 2022-05-23 15:01:27
+        epoch + offset_seconds * 1000000
+    }
+
+    #[test_only]
+    fun mock_curve_params(): (u64, u64, u64, u64) {
+        let initial_A = 3000000;        // 3 * (10**6)
+        let future_A = 3500000;        // 3.5 * (10**6)
+        let initial_A_time = time(0);
+        let future_A_time = time(3600);
+        (initial_A, future_A, initial_A_time, future_A_time)
     }
 
     #[test]
@@ -98,6 +93,20 @@ module HippoSwap::StableCurveNumeral {
         Std::Debug::print(&s);
     }
 
+    #[test]
+    fun test_raw_A_branch_B() {
+        let (ia, fa, iat, fat) = mock_curve_params();
+        let timestamp = time(200);
+        raw_A(fat, fa, iat, ia, timestamp);
+    }
+
+    #[test]
+    fun test_raw_A_branch_A() {
+        let (ia, _fa, iat, fat) = mock_curve_params();
+        let fa = 2600000;
+        let timestamp = time(200);
+        raw_A(fat, fa, iat, ia, timestamp);
+    }
 
     #[test]
     #[expected_failure(abort_code = 2020)]

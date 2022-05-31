@@ -23,6 +23,10 @@ module HippoSwap::Math {
         if (a > b) b else a
     }
 
+    public fun max_u64(a: u64, b: u64): u64 {
+        if (a < b) b else a
+    }
+
     public fun max(a: u128, b: u128): u128 {
         if (a < b) b else a
     }
@@ -42,6 +46,10 @@ module HippoSwap::Math {
     #[test]
     public fun sqrt_works() {
         assert!(sqrt(4) == 2, 0);
+    }
+    #[test]
+    public fun max_works() {
+        assert!(max(4, 12) == 12, 0);
     }
 
     #[test]
