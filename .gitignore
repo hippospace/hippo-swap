@@ -5,3 +5,5 @@ build
 !.git/hooks/pre-commit
 storage
 target
+.aptos
+.DS_Store
