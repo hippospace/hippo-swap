@@ -165,9 +165,9 @@ module HippoSwap::CPSwap {
         let (a_x, a_y) = if (reserve_x == 0 && reserve_y == 0) {
             (amount_x, amount_y)
         } else {
-            let amount_x_optimal = CPSwapUtils::quote(amount_x, reserve_x, reserve_y);
-            if (amount_x_optimal <= amount_y) {
-                (amount_x, amount_x_optimal)
+            let amount_y_optimal = CPSwapUtils::quote(amount_x, reserve_x, reserve_y);
+            if (amount_y_optimal <= amount_y) {
+                (amount_x, amount_y_optimal)
             } else {
                 let amount_x_optimal = CPSwapUtils::quote(amount_y, reserve_y, reserve_x);
                 assert!(amount_x_optimal <= amount_x, ERROR_INVALID_AMOUNT);
@@ -197,9 +197,9 @@ module HippoSwap::CPSwap {
         let (a_x, a_y) = if (reserve_x == 0 && reserve_y == 0) {
             (amount_x, amount_y)
         } else {
-            let amount_x_optimal = CPSwapUtils::quote(amount_x, reserve_x, reserve_y);
-            if (amount_x_optimal <= amount_y) {
-                (amount_x, amount_x_optimal)
+            let amount_y_optimal = CPSwapUtils::quote(amount_x, reserve_x, reserve_y);
+            if (amount_y_optimal <= amount_y) {
+                (amount_x, amount_y_optimal)
             } else {
                 let amount_x_optimal = CPSwapUtils::quote(amount_y, reserve_y, reserve_x);
                 assert!(amount_x_optimal <= amount_x, ERROR_INVALID_AMOUNT);
@@ -454,6 +454,7 @@ module HippoSwap::CPSwap {
         let w_x = extract_x(amount_x, metadata);
         let w_y = extract_y(amount_y, metadata);
 
+        let (balance_x, balance_y) = token_balances_metadata<X, Y>(metadata);
         update(balance_x,balance_y, reserves);
 
         if (metadata.fee_on)

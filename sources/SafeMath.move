@@ -9,7 +9,6 @@ module HippoSwap::SafeMath {
     }
 
     public fun sub(a: u128, b: u128): u128 {
-        assert!(a >= b, ERROR_UNDERFLOW);
         a - b
     }
 
