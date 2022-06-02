@@ -105,8 +105,6 @@ module CPScripts {
 
     #[test_only]
     use AptosFramework::Timestamp;
-    #[test_only]
-    use Std::Debug;
 
     // #[test_only]
     fun init_coin_and_create_store<CoinType>(
@@ -220,7 +218,6 @@ module CPScripts {
         assert!(Coin::balance<MockCoin::WUSDC>(user_addr)==0, 5);
         CPSwap::swap_x_to_exact_y<MockCoin::WBTC, MockCoin::WUSDC>(user, 100, user_addr);
         assert!(Coin::balance<MockCoin::WUSDC>(user_addr) > 0, 5);
-        Debug::print(&Coin::balance<MockCoin::WUSDC>(user_addr));
 
     }
 }

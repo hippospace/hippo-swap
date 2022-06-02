@@ -153,6 +153,12 @@ module HippoSwap::CPSwap {
         token_balances_metadata<X, Y>(meta)
     }
 
+    fun check_coin_store<X>(sender: &signer) {
+        if (!Coin::is_account_registered<X>(Signer::address_of(sender))) {
+            Coin::register_internal<X>(sender);
+        };
+    }
+
     // ===================== Update functions ======================
     /// Add more liquidity to token types. This method explicitly assumes the
     /// min of both tokens are 0.
@@ -178,9 +184,11 @@ module HippoSwap::CPSwap {
         deposit_x<X, Y>(Coin::withdraw<X>(sender, a_x));
         deposit_y<X, Y>(Coin::withdraw<Y>(sender, a_y));
 
+        let sender_addr = Signer::address_of(sender);
         let lp = mint<X, Y>();
         let lp_amount = Coin::value(&lp);
-        Coin::deposit(Signer::address_of(sender), lp);
+        check_coin_store<LPToken<X,Y>>(sender);
+        Coin::deposit(sender_addr, lp);
 
         (a_x, a_y, lp_amount)
     }
@@ -231,6 +239,8 @@ module HippoSwap::CPSwap {
         let amount_x = Coin::value(&coins_x);
         let amount_y = Coin::value(&coins_y);
 
+        check_coin_store<X>(sender);
+        check_coin_store<Y>(sender);
         Coin::deposit<X>(Signer::address_of(sender), coins_x);
         Coin::deposit<Y>(Signer::address_of(sender), coins_y);
 
@@ -261,6 +271,7 @@ module HippoSwap::CPSwap {
         let coins = Coin::withdraw<X>(sender, amount_in);
         let (coins_x_out, coins_y_out) = swap_x_to_exact_y_direct<X, Y>(coins);
         let amount_out = Coin::value(&coins_y_out);
+        check_coin_store<Y>(sender);
         Coin::deposit(to, coins_x_out); // or others ways to drop `coins_x_out`
         Coin::deposit(to, coins_y_out);
         amount_out
@@ -288,6 +299,7 @@ module HippoSwap::CPSwap {
         let coins = Coin::withdraw<Y>(sender, amount_in);
         let (coins_x_out, coins_y_out) = swap_y_to_exact_x_direct<X, Y>(coins);
         let amount_out = Coin::value<X>(&coins_x_out);
+        check_coin_store<X>(sender);
         Coin::deposit(to, coins_x_out);
         Coin::deposit(to, coins_y_out); // or others ways to drop `coins_y_out`
         amount_out
@@ -299,7 +311,7 @@ module HippoSwap::CPSwap {
     ): (Coin::Coin<X>, Coin::Coin<Y>) acquires TokenPairReserve, TokenPairMetadata {
         let amount_in = Coin::value<Y>(&coins_in);
         deposit_y<X, Y>(coins_in);
-        let (rin, rout, _) = get_reserves<X, Y>();
+        let (rout, rin, _) = get_reserves<X, Y>();
         let amount_out = CPSwapUtils::get_amount_out(amount_in, rin, rout);
         let (coins_x_out, coins_y_out) = swap<X, Y>(amount_out, 0);
         assert!(Coin::value<Y>(&coins_y_out) == 0, ERROR_INSUFFICIENT_OUTPUT_AMOUNT);
