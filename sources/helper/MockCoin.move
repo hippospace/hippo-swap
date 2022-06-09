@@ -78,15 +78,13 @@ module MockCoin {
         faucet_mint_to<TokenType>(to, amount);
     }
 
-//    #[test(admin = @HippoSwap, core_resource_account = @CoreResources)]
-//    fun mint_mock_coin(admin: &signer, core_resource_account: &signer)  acquires TokenSharedCapability {
-//        use AptosFramework::Genesis;
-//        Genesis::setup(core_resource_account);
-//
-//        initialize<WETH>(admin, 18);
-//        let x = mint<WETH>(10);
-//        burn(x)
-//    }
+
+    #[test(admin=@HippoSwap, user=@0x1234567, core=@0xa550c18)]
+    public(script) fun test_mint_script(admin: &signer, user: &signer) acquires TokenSharedCapability {
+        initialize<WETH>(admin, 6);
+        faucet_mint_to_script<WETH>(user, 1000000);
+    }
+
 }
 
 }
