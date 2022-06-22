@@ -49,6 +49,7 @@ pgrep 'aptos-faucet' | xargs kill
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -d|--aptos-core-dir) target="$2"; shift ;;
+        -p|--profile) profile="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -75,9 +76,10 @@ echo "Current path:"
 pwd
 
 echo "Done."
-account_id="49c5e3ec5041062f02a352e4a2d03ce2bb820d94e8ca736b08a324f8dc634790"
 ln -s "${HOME}/.config/aptos/.aptos" .
-aptos account create --profile v3_local --account "${account_id}" --use-faucet
+account_id=$(yq ".profiles.${profile}.account" .aptos/config.yaml)
+echo "account id is ${account_id}"
+aptos account create --profile "${profile}" --account "${account_id}" --use-faucet
 echo "The account_id is :"
 account_id_prefixed="0x${account_id}"
 echo "${account_id_prefixed}"
@@ -87,8 +89,8 @@ git clone https://github.com/hippospace/aptos-registry.git
 cd aptos-registry/move || exit
 ln -s "${HOME}/.config/aptos/.aptos" .
 aptos move compile --package-dir .
-aptos move publish --package-dir . --profile v3_local
+aptos move publish --package-dir . --profile "${profile}"
 
 cd "${source_root}" || exit
 aptos move compile --package-dir .
-aptos move publish --package-dir . --profile v3_local
+aptos move publish --package-dir . --profile "${profile}"

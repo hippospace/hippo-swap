@@ -12,7 +12,7 @@
 CURDIR=$(pwd)
 
 usage() {
-  echo "Usage: $0 [-a /aptos-core-path] [-h /hippo-path] [-t /tsgen-path]  [-s /sdk-path] [-c /config.file] -r" 1>&2
+  echo "Usage: $0 [-a /aptos-core-path] [-h /hippo-path] [-t /tsgen-path]  [-s /sdk-path] [-c /config.file] [-p profile] -r" 1>&2
   exit 1
 }
 
@@ -43,6 +43,11 @@ while [[ "$#" -gt 0 ]]; do
     echo "SDK path: $SDK_PATH"
     shift
     ;;
+  -p|--profile)
+    PROFILE="$2";
+    echo "PROFILE: $PROFILE"
+    shift
+    ;;
   -r | --replace-sdk)
     COPY_TO_HIPPO=1
     echo "COPY to hippo sdk: $COPY_TO_HIPPO"
@@ -57,13 +62,13 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 cd "${HIPPO_PATH}" || exit 1
-
-sh scripts/validator/start_validator.sh -d "${APTOS_CORE_PATH}"
-aptos account fund --account 49c5e3ec5041062f02a352e4a2d03ce2bb820d94e8ca736b08a324f8dc634790 --profile v3_local --num-coins 1000000
+ACCOUNT_ID=$(yq ".profiles.${PROFILE}.account" .aptos/config.yaml)
+sh scripts/validator/start_validator.sh -d "${APTOS_CORE_PATH}" -p "${PROFILE}"
+aptos account fund --account "${ACCOUNT_ID}"  --profile v4_local --num-coins 1000000
 
 sh scripts/sdk/hippo-gen.sh -h "${HIPPO_PATH}" -t "${TSGEN_PATH}" -s "${SDK_PATH}" -r
 
-sh scripts/sdk/sdk-integration-tests.sh -s "${SDK_PATH}" -c "${CONFIG_FILE}"
+sh scripts/sdk/sdk-integration-tests.sh -s "${SDK_PATH}" -c "${CONFIG_FILE}" -p "${PROFILE}"
 
 cd "${CURDIR}" || exit 1
 

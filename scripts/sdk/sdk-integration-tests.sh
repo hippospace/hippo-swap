@@ -8,7 +8,7 @@
 CURDIR=$(pwd)
 
 usage() {
-  echo "Usage: $0 [-a /aptos-core-path] [-h /hippo-path] [-t /tsgen-path]  [-s /sdk-path] [-c /config.file] -r" 1>&2
+  echo "Usage: $0 [-a /aptos-core-path] [-h /hippo-path] [-t /tsgen-path]  [-s /sdk-path] [-c /config.file] [-p profile] -r" 1>&2
   exit 1
 }
 
@@ -92,6 +92,9 @@ while [[ "$#" -gt 0 ]]; do
     echo "Config file: $CONFIG_FILE"
     shift
     ;;
+  -p | --profile)
+    PROFILE="$2"
+    shift;;
   -s | --sdk-path)
     SDK_PATH="$2"
     echo "SDK path: $SDK_PATH"
@@ -108,9 +111,9 @@ yarn build
 echo " ${On_IGreen} SDK TESTS Begin: ${Color_Off} "
 
 echo " ${On_IGreen} mock-deploy ${Color_Off} "
-yarn cli -c "${CONFIG_FILE}" -p v3_local mock-deploy
+yarn cli -c "${CONFIG_FILE}" -p "${PROFILE}" mock-deploy
 echo " ${On_IGreen} mock-deploy ok. ${Color_Off} "
 
 echo " ${On_IGreen} show-pools ${Color_Off} "
-yarn cli -c "${CONFIG_FILE}" -p v3_local show-pools
+yarn cli -c "${CONFIG_FILE}" -p "${PROFILE}" show-pools
 echo " ${On_IGreen} show-pools ok. ${Color_Off} "

@@ -3,4 +3,5 @@
 -t /The/path/of/WebstormProjects/aptos-tsgen
 -s /The/path/of/WebstormProjects/hippo-sdk
 -c /The/path/of/.config/aptos/.aptos/config.yaml
+-p v4_local
 -r
