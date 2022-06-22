@@ -32,7 +32,40 @@ module HippoSwap::Proc {
     //   * in out amount
     // These test should be able to perform continuously and get observable accumulation.
 
+
+    // The whole procedures that test the activities of a pool perform as latter:
+    //
+    //   * System preparing
+    //     - sys: start time
+    //     - sys: init mock coins
+    //   * Publish the pool
+    //     - admin: create the pool and token registry
+    //     - sys: validations (...)
+    //       + the storage has been initialized correctly.
+    //       + the states of the pool are ready to perform transactions.
+    //       + permissions
+    //   * Transaction Process
+    //     + Prepare
+    //       - investor: give him some money.
+    //       - swapper: give him some money
+    //     + Single cases
+    //       * Normal
+    //         - investor: add liquidity
+    //           + investor: add liquidity for the first time.
+    //           + sys: validations (*POOL STATE*)
+    //             * reserve of incoming coins
+    //             * fee
+    //             * lptoken minted or burned correctly
+    //         - swapper: swap
+    //           + swapper: transaction some bucks
+    //             * sys: validations (*POOL STATE*) ...
+    //     + Fuzz
+    //     + Mutant
+
+
     use HippoSwap::TestShared;
+    use HippoSwap::MockCoin::{WUSDC, WETH};
+    use HippoSwap::Router;
 
     const ADMIN: address = @HippoSwap;
     const INVESTOR: address = @0x2FFF;
@@ -62,16 +95,27 @@ module HippoSwap::Proc {
     const P17: u64 = 100000000000000000;        // 10 ** 8  * 10 ** 9  (billion)
     const P18: u64 = 1000000000000000000;
 
-
-
     #[test_only]
     public fun the_begining(admin: &signer, core: &signer) {
         TestShared::time_start(core);
         TestShared::init_regitry_and_mock_coins(admin);
     }
 
-    // #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
-    // public fun test_process(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
+    #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
+    public fun test_pool_constant_product(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
+        let pool_type = POOL_TYPE_CONSTANT_PRODUCT;
+        the_begining(admin, core);
+        TestShared::create_pool<WUSDC, WETH>(admin, pool_type, b"USDC-ETH-CP");
+        // TODO: Check pool state.
+        TestShared::fund_for_participants<WUSDC, WETH>(investor, P8, P9);
+        TestShared::fund_for_participants<WUSDC, WETH>(swapper, P8, P9);
+        Router::add_liquidity_route<WUSDC, WETH>(investor, pool_type, P8, P9);
+        TestShared::debug_print_pool_reserve_xy<WUSDC, WETH>(pool_type);
+        TestShared::debug_print_pool_lp_supply<WUSDC, WETH>(pool_type);
+        TestShared::debug_print_pool_fee<WUSDC, WETH>(pool_type);
+        TestShared::debug_print_save_point<WUSDC, WETH>(pool_type);
+        TestShared::sync_save_point<WUSDC, WETH>(pool_type);
+        TestShared::debug_print_save_point<WUSDC, WETH>(pool_type);
+     }
 
-    // }
 }
