@@ -54,11 +54,6 @@ module HippoSwap::TestShared {
     const P18: u64 = 1000000000000000000;
     const P19: u64 = 10000000000000000000;
 
-
-
-    const CURVE_FEE_RATE: u64 = 3000;    // which is actually 0.3% after divided by the FEE DENOMINATOR;
-    const CURVE_ADMIN_FEE_RATE: u64 = 200000; // which is 20%, the admin fee is the percent to take from the fee (total fee included)
-
     #[test_only]
     public fun time_start(core: &signer) {
         Timestamp::set_time_has_started_for_testing(core);
@@ -95,11 +90,12 @@ module HippoSwap::TestShared {
             let fee_on = true;
             CPScripts::create_new_pool<X, Y>(signer, addr, fee_on, lp_name, lp_name, lp_name, logo_url, project_url)
         } else if ( pool_type == POOL_TYPE_STABLE_CURVE ) {
-            StableCurveScripts::create_new_pool<X, Y>(signer, lp_name, lp_name, lp_name, logo_url, project_url, CURVE_FEE_RATE, CURVE_ADMIN_FEE_RATE);
+            let (fee, admin_fee) = (100, 100000);
+            StableCurveScripts::create_new_pool<X, Y>(signer, lp_name, lp_name, lp_name, logo_url, project_url, fee, admin_fee);
         } else if ( pool_type == POOL_TYPE_PIECEWISE ) {
             let k = ((BILLION * BILLION) as u128);
-            let (n1, d1, n2, d2) = (110, 100, 105, 100,);
-            PieceSwapScript::create_new_pool<X, Y>(signer, lp_name, lp_name, lp_name, logo_url, project_url, k, n1, d1, n2, d2)
+            let (n1, d1, n2, d2, fee, protocal_fee) = (110, 100, 105, 100, 100, 100);
+            PieceSwapScript::create_new_pool<X, Y>(signer, lp_name, lp_name, lp_name, logo_url, project_url, k, n1, d1, n2, d2, fee, protocal_fee);
         }
     }
 
@@ -143,7 +139,9 @@ module HippoSwap::TestShared {
             assert!(predict_x == fee_x, E_BALANCE_PREDICTION);
             assert!(predict_y == fee_y, E_BALANCE_PREDICTION);
         } else if (pool_type == POOL_TYPE_PIECEWISE) {
-            abort E_NOT_IMPLEMENTED
+            let (fee_x, fee_y ) = PieceSwap::get_fee_amounts<X, Y>();
+            assert!(predict_x == fee_x, E_BALANCE_PREDICTION);
+            assert!(predict_y == fee_y, E_BALANCE_PREDICTION);
         } else {
             abort E_UNKNOWN_POOL_TYPE
         };

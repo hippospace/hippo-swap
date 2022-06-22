@@ -28,10 +28,10 @@ module HippoSwap::PieceTest {
     public fun create_pools(signer: &signer) {
         let (logo_url, project_url) = (b"", b"");
         let lp1 =  b"USDC-USDT-PIECE-LP";       // will be compete with Piece Pool
-        let lp2 = b"USDT-DAI-CURVE-LP";         // The only route of pair in the sys.
+        let lp2 = b"USDT-DAI-PIECE-LP";         // The only route of pair in the sys.
         let k = ((BILLION * BILLION) as u128);
         let (n1, d1, n2, d2) = (110, 100, 105, 100,);
-        create_new_pool<WUSDC, WUSDT>(signer, lp1, lp1, lp1, logo_url, project_url, k, n1, d1, n2, d2);
-        create_new_pool<WUSDT, WDAI>(signer, lp2, lp2, lp2, logo_url, project_url, k, n1, d1, n2, d2);
+        create_new_pool<WUSDC, WUSDT>(signer, lp1, lp1, lp1, logo_url, project_url, k, n1, d1, n2, d2, 100, 100);
+        create_new_pool<WUSDT, WDAI>(signer, lp2, lp2, lp2, logo_url, project_url, k, n1, d1, n2, d2, 100, 100);
     }
 }

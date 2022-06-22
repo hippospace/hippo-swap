@@ -120,6 +120,16 @@ module HippoSwap::StableCurveScripts {
         StableCurveSwap::initialize<X, Y>(
             admin, name, name, decimals, initial_A, future_A, initial_A_time, future_A_time, fee, admin_fee
         );
+
+        TokenRegistry::add_token<StableCurveSwap::LPToken<X,Y>>(
+            admin,
+            symbol,
+            symbol,
+            symbol,
+            (decimals as u8),
+            b"",
+            b"",
+        );
         let some_x = MockCoin::mint<X>(left_amt);
         let some_y = MockCoin::mint<Y>(right_amt);
 
@@ -158,7 +168,7 @@ module HippoSwap::StableCurveScripts {
         let coin_amt = 1000000000;
         mock_create_pair_and_add_liquidity<MockCoin::WUSDC, MockCoin::WUSDT>(
             admin,
-            b"USDC-USDT-LP",
+            b"USDC-USDT-CURVE-LP",
             fee, admin_fee,
             coin_amt * 100,
             coin_amt * 100,
@@ -166,7 +176,7 @@ module HippoSwap::StableCurveScripts {
         );
         mock_create_pair_and_add_liquidity<MockCoin::WUSDC, MockCoin::WDAI>(
             admin,
-            b"USDC-DAI-LP",
+            b"USDC-DAI-CURVE-LP",
             fee, admin_fee,
             coin_amt * 100,
             coin_amt * 100,
