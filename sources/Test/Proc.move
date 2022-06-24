@@ -32,7 +32,11 @@ module HippoSwap::Proc {
     //   * in out amount
     // These test should be able to perform continuously and get observable accumulation.
 
-
+    // Dimension test of a pool repeat a case in three times:
+    //   * test with normal amounts
+    //   * test with minimal amounts
+    //   * test with giant amounts
+    //
     // The whole procedures that test the activities of a pool perform as latter:
     //
     //   * System preparing
@@ -49,18 +53,20 @@ module HippoSwap::Proc {
     //       - investor: give him some money.
     //       - swapper: give him some money
     //     + Single cases
-    //       * Normal
-    //         - investor: add liquidity
-    //           + investor: add liquidity for the first time.
-    //           + sys: validations (*POOL STATE*)
-    //             * reserve of incoming coins
-    //             * fee
-    //             * lptoken minted or burned correctly
-    //         - swapper: swap
-    //           + swapper: transaction some bucks
-    //             * sys: validations (*POOL STATE*) ...
-    //     + Fuzz
-    //     + Mutant
+    //       - investor: add liquidity
+    //         + investor: add liquidity for the first time.
+    //         + sys: validations (*POOL STATE*)
+    //           * reserve of incoming coins
+    //           * fee
+    //           * lptoken minted or burned correctly
+    //       - swapper: swap
+    //         + swapper: transaction some bucks
+    //           * sys: validations (*POOL STATE*) ...
+    //
+
+    // The overflow test indicates the handling capacity of a pool.
+
+    // And the fuzz test demonstrates the ability of the pool to perform the business accumulatively.
 
 
     use HippoSwap::TestShared;
@@ -104,9 +110,9 @@ module HippoSwap::Proc {
     #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
     public fun test_pool_constant_product(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
         let pool_type = POOL_TYPE_CONSTANT_PRODUCT;
-        the_begining(admin, core);
+        TestShared::time_start(core);
+        TestShared::init_regitry_and_mock_coins(admin);
         TestShared::create_pool<WUSDC, WETH>(admin, pool_type, b"USDC-ETH-CP");
-        // TODO: Check pool state.
         TestShared::fund_for_participants<WUSDC, WETH>(investor, P8, P9);
         TestShared::fund_for_participants<WUSDC, WETH>(swapper, P8, P9);
         Router::add_liquidity_route<WUSDC, WETH>(investor, pool_type, P8, P9);

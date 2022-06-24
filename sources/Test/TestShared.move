@@ -31,6 +31,7 @@ module HippoSwap::TestShared {
     const E_NOT_IMPLEMENTED: u64 = 0;
     const E_UNKNOWN_POOL_TYPE: u64 = 1;
     const E_BALANCE_PREDICTION: u64 = 2;
+    const E_DELTA_AMOUNT: u64 = 3;
 
     // 10 to the power of n.
     const P3: u64 = 1000;
@@ -56,11 +57,15 @@ module HippoSwap::TestShared {
     const P19: u64 = 10000000000000000000;
 
     const LABEL_SAVE_POINT: u128 = 333000000000000000000000000000000000000;
-    const LABEL_RESERVE_XY: u128 = 333000000000000000000000000000000000001;
-    const LABEL_FEE: u128 = 333000000000000000000000000000000000002;
-    const LABEL_LPTOKEN_SUPPLY: u128 = 333000000000000000000000000000000000003;
+    const LABEL_POOL: u128 = 333000000000000000000000000000000000001;
+    const LABEL_RESERVE_XY: u128 = 333000000000000000000000000000000000002;
+    const LABEL_FEE: u128 = 333000000000000000000000000000000000003;
+    const LABEL_LPTOKEN_SUPPLY: u128 = 333000000000000000000000000000000000004;
 
-    struct SavePoint<phantom LpTokenType> has key {
+    const INC: u8 = 0;
+    const DEC: u8 = 1;
+
+    struct SavePoint<phantom LpTokenType> has key, drop {
         reserve_x: u64,
         reserve_y: u64,
         reserve_lp: u64,
@@ -79,7 +84,7 @@ module HippoSwap::TestShared {
         TokenRegistry::initialize(admin);
         MockDeploy::init_coin_and_create_store<WUSDT>(admin, b"USDT", b"USDT", 8);
         MockDeploy::init_coin_and_create_store<WUSDC>(admin, b"USDC", b"USDC", 8);
-        MockDeploy::init_coin_and_create_store<WDAI>(admin, b"DAI", b"DAI", 8);
+        MockDeploy::init_coin_and_create_store<WDAI>(admin, b"DAI", b"DAI", 7);
         MockDeploy::init_coin_and_create_store<WETH>(admin, b"ETH", b"ETH", 9);
         MockDeploy::init_coin_and_create_store<WBTC>(admin, b"BTC", b"BTC", 10);
         MockDeploy::init_coin_and_create_store<WDOT>(admin, b"DOT", b"DOT", 6);
@@ -220,6 +225,20 @@ module HippoSwap::TestShared {
     }
 
     #[test_only]
+    public fun debug_print_pool<X, Y>(pool_type: u8) {
+        let ( reserve_x, reserve_y ) = get_pool_reserve_route<X, Y>(pool_type);
+        let supply = get_pool_lp_supply_route<X, Y>(pool_type);
+        let (fee_x, fee_y, fee_lp) = get_pool_fee_route<X, Y>(pool_type);
+        Std::Debug::print(&LABEL_POOL);
+        Std::Debug::print(&reserve_x);
+        Std::Debug::print(&reserve_y);
+        Std::Debug::print(&supply);
+        Std::Debug::print(&fee_x);
+        Std::Debug::print(&fee_y);
+        Std::Debug::print(&fee_lp);
+    }
+
+    #[test_only]
     public fun sync_save_point_with_data<T>(
         p: &mut SavePoint<T>, reserve_x: u64, reserve_y: u64, reserve_lp: u64, fee_x: u64, fee_y: u64, fee_lp: u64
     ) {
@@ -278,6 +297,106 @@ module HippoSwap::TestShared {
             debug_print_save_point_info(save_point)
         } else {
             abort E_UNKNOWN_POOL_TYPE
+        }
+    }
+
+    #[test_only]
+    fun assert_delta(sign: u8, delta: u64, current: u64, origin: u64,) {
+        if (sign==INC) {
+            assert!(delta == current - origin, E_DELTA_AMOUNT)
+        } else {
+            assert!(delta == origin - current, E_DELTA_AMOUNT)
+        }
+    }
+
+    #[test_only]
+    fun assert_pool_delta_content<LpToken>(
+        sp: &mut SavePoint<LpToken>,
+        sign_reserve_x: u8,
+        sign_reserve_y: u8,
+        sign_reserve_lp: u8,
+        sign_fee_x: u8,
+        sign_fee_y: u8,
+        sign_fee_lp: u8,
+        delta_reserve_x: u64,
+        delta_reserve_y: u64,
+        delta_reserve_lp: u64,
+        delta_fee_x: u64,
+        delta_fee_y: u64,
+        delta_fee_lp: u64,
+        reserve_x: u64,
+        reserve_y: u64,
+        reserve_lp: u64,
+        fee_x: u64,
+        fee_y: u64,
+        fee_lp: u64,
+    ) {
+        assert_delta(sign_reserve_x, delta_reserve_x, reserve_x, sp.reserve_x);
+        assert_delta(sign_reserve_y, delta_reserve_y, reserve_y, sp.reserve_y);
+        assert_delta(sign_reserve_lp, delta_reserve_lp, reserve_lp, sp.reserve_lp);
+        assert_delta(sign_fee_x, delta_fee_x, fee_x, sp.fee_x);
+        assert_delta(sign_fee_y, delta_fee_y, fee_y, sp.fee_y);
+        assert_delta(sign_fee_lp, delta_fee_lp, fee_lp, sp.fee_lp);
+    }
+
+    #[test_only]
+    public fun assert_pool_delta<X, Y>(
+        pool_type: u8,
+        with_sync: bool,
+        sign_reserve_x: u8,
+        sign_reserve_y: u8,
+        sign_reserve_lp: u8,
+        sign_fee_x: u8,
+        sign_fee_y: u8,
+        sign_fee_lp: u8,
+        delta_reserve_x: u64,
+        delta_reserve_y: u64,
+        delta_reserve_lp: u64,
+        delta_fee_x: u64,
+        delta_fee_y: u64,
+        delta_fee_lp: u64,
+    ) acquires SavePoint {
+        let (fee_x, fee_y, fee_lp) = get_pool_fee_route<X, Y>(pool_type);
+        let ( reserve_x, reserve_y ) = get_pool_reserve_route<X, Y>(pool_type);
+        let supply = get_pool_lp_supply_route<X, Y>(pool_type);
+        if (pool_type == POOL_TYPE_CONSTANT_PRODUCT) {
+            let save_point = borrow_global_mut<SavePoint<CPSwap::LPToken<X, Y>>>(ADMIN);
+            assert_pool_delta_content(
+                save_point,
+                sign_reserve_x, sign_reserve_y, sign_reserve_lp,
+                sign_fee_x, sign_fee_y, sign_fee_lp,
+                delta_reserve_x, delta_reserve_y, delta_reserve_lp,
+                delta_fee_x, delta_fee_y, delta_fee_lp,
+                reserve_x, reserve_y, supply,
+                fee_x, fee_y, fee_lp,
+            );
+        } else if (pool_type == POOL_TYPE_STABLE_CURVE) {
+            let save_point = borrow_global_mut<SavePoint<StableCurveSwap::LPToken<X, Y>>>(ADMIN);
+            assert_pool_delta_content(
+                save_point,
+                sign_reserve_x, sign_reserve_y, sign_reserve_lp,
+                sign_fee_x, sign_fee_y, sign_fee_lp,
+                delta_reserve_x, delta_reserve_y, delta_reserve_lp,
+                delta_fee_x, delta_fee_y, delta_fee_lp,
+                reserve_x, reserve_y, supply,
+                fee_x, fee_y, fee_lp,
+            );
+        } else if (pool_type == POOL_TYPE_PIECEWISE) {
+            let save_point = borrow_global_mut<SavePoint<PieceSwap::LPToken<X, Y>>>(ADMIN);
+            assert_pool_delta_content(
+                save_point,
+                sign_reserve_x, sign_reserve_y, sign_reserve_lp,
+                sign_fee_x, sign_fee_y, sign_fee_lp,
+                delta_reserve_x, delta_reserve_y, delta_reserve_lp,
+                delta_fee_x, delta_fee_y, delta_fee_lp,
+                reserve_x, reserve_y, supply,
+                fee_x, fee_y, fee_lp,
+            );
+        } else {
+            abort E_UNKNOWN_POOL_TYPE
+        };
+        if (with_sync) {
+            sync_save_point<X, Y>(pool_type);
         }
     }
 }

@@ -100,6 +100,13 @@ module HippoSwap::StableCurveSwap {
         Coin::balance<LPToken<X, Y>>(addr)
     }
 
+    fun check_and_deposit<TokenType>(to: &signer, coin: Coin::Coin<TokenType>) {
+        if(!Coin::is_account_registered<TokenType>(Signer::address_of(to))) {
+            Coin::register_internal<TokenType>(to);
+        };
+        Coin::deposit(Signer::address_of(to), coin);
+    }
+
     #[test_only]
     fun init_mock_coin<Money: store>(creator: &signer): Coin::Coin<Money> {
         use HippoSwap::MockCoin;
@@ -257,7 +264,7 @@ module HippoSwap::StableCurveSwap {
         let lp_amt = Coin::value<LPToken<X, Y>>(&minted_lp_token);
         Coin::deposit(addr, x);
         Coin::deposit(addr, y);
-        Coin::deposit(addr, minted_lp_token);
+        check_and_deposit(sender, minted_lp_token);
         (amount_x, amount_y, lp_amt)
     }
 
