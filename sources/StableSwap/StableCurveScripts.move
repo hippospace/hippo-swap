@@ -77,7 +77,8 @@ module HippoSwap::StableCurveScripts {
         StableCurveSwap::remove_liquidity<X, Y>(sender, liquidity, min_amount_x, min_amount_y);
     }
 
-    public(script) fun swap_script<X, Y>(
+
+    public fun swap<X, Y>(
         sender: &signer,
         x_in: u64,
         y_in: u64,
@@ -97,6 +98,16 @@ module HippoSwap::StableCurveScripts {
             let (_, out_amount, _) = StableCurveSwap::swap_y_to_exact_x<X, Y>(sender, y_in, addr);
             assert!(out_amount > x_min_out, E_OUTPUT_LESS_THAN_MIN);
         }
+    }
+
+    public(script) fun swap_script<X, Y>(
+        sender: &signer,
+        x_in: u64,
+        y_in: u64,
+        x_min_out: u64,
+        y_min_out: u64,
+    ) {
+        swap<X, Y>(sender, x_in, y_in, x_min_out, y_min_out)
     }
 
     fun mock_create_pair_and_add_liquidity<X, Y>(

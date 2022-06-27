@@ -290,6 +290,9 @@ module HippoSwap::StableCurveNumeral {
     ///
     /// y**2 + by = c
     /// y_n_1 = (y_n**2 + c)/(2*y_n +b)
+    ///
+    /// ^ abandoned ^
+    ///
     /// invariant
     /// y**2 + (x + D/2A - D) * y = D**3 / 8*A*x
     ///
@@ -302,7 +305,8 @@ module HippoSwap::StableCurveNumeral {
         let x = (x as u128);
         let y = d;
         let b = x + (d / (2 * amp));  // - d
-        let c = d * d * d / (8 * amp * x);
+        let c = ((d * d) / x ) * d / (8 * amp);
+        // let c = (d * d * d) / (8 * amp * x);             // test the difference with these two params
         let (result, _) = recur_y(y, b, c, d, 0, 100);
         result
     }

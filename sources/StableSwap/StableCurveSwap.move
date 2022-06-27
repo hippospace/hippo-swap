@@ -207,11 +207,10 @@ module HippoSwap::StableCurveSwap {
             assert!(x_value_prev > 0, ERROR_SWAP_ADDLIQUIDITY_INVALID);
             assert!(y_value_prev > 0, ERROR_SWAP_ADDLIQUIDITY_INVALID);
         };
-        let (new_reserve_x, new_reserve_y) = (reserve_amt_y + x_value_prev, reserve_amt_y + y_value_prev);
+        let (new_reserve_x, new_reserve_y) = (reserve_amt_x + x_value_prev, reserve_amt_y + y_value_prev);
 
         let d1 = get_D_flat(new_reserve_x, new_reserve_y, amp, p.multiplier_x, p.multiplier_y);
         assert!(d1 > d0, ERROR_SWAP_INVALID_DERIVIATION);
-
         let mint_amount;
         if (token_supply > 0) {
             let fee = p.fee * 2 / 4;
@@ -286,7 +285,7 @@ module HippoSwap::StableCurveSwap {
         let dx_rated = dx * p.multiplier_x;
         let y = get_y(i, dx_rated, xp, yp, p.initial_A, p.initial_A_time, p.future_A, p.future_A_time);
 
-        let amount_dy = yp - y - 1;
+        let amount_dy = ( yp - y - 1) / p.multiplier_y;
         let amount_dy_fee = amount_dy * p.fee / (FEE_DENOMINATOR as u64);
         let charged_amt_dy = (amount_dy - amount_dy_fee);
 
@@ -314,7 +313,7 @@ module HippoSwap::StableCurveSwap {
         let dy_rated = dy * p.multiplier_y;
         let x = get_y(i, dy_rated, xp, yp, p.initial_A, p.initial_A_time, p.future_A, p.future_A_time);
 
-        let amount_dx = xp - x - 1;
+        let amount_dx = (xp - x - 1 )  / p.multiplier_x;
         let amount_dx_fee = amount_dx * p.fee / (FEE_DENOMINATOR as u64);
         let charged_amt_dx = (amount_dx - amount_dx_fee);
 

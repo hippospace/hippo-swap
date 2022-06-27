@@ -56,8 +56,8 @@ module HippoSwap::CPTest {
     public fun test_pool_constant_product(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
         let pool_type = POOL_TYPE_CONSTANT_PRODUCT;
         TestShared::time_start(core);
-        TestShared::init_regitry_and_mock_coins(admin);
-        TestShared::create_pool<WUSDC, WETH>(admin, pool_type, b"USDC-ETH-CP-LP");
+        TestShared::init_registry_and_mock_coins(admin);
+        TestShared::create_pool<WUSDC, WETH>(admin, pool_type, 0, 0,0,0,0,0,0);
         // TODO: Check pool state.
         TestShared::fund_for_participants<WUSDC, WETH>(investor, P8, P9);
         TestShared::fund_for_participants<WUSDC, WETH>(swapper, P8, P9);
