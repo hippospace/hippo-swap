@@ -485,9 +485,13 @@ module HippoSwap::StableCurveScripts {
         StableCurveSwap::add_liquidity<MockCoin::WUSDC, MockCoin::WUSDT>(admin, 50000000, 10000000);
 
         let balance = StableCurveSwap::balance<MockCoin::WUSDC, MockCoin::WUSDT>(admin_addr);
-        assert!(balance == 17744674, 1);
+
+        assert!(balance == 23861095, 1);
         let (_, _, _, fee_x, fee_y, _, _, _, _, _, _, _, _, _) = StableCurveSwap::get_pool_info<MockCoin::WUSDC, MockCoin::WUSDT>();
-        assert!(fee_x == 30061, 1);
-        assert!(fee_y == 4085, 1);
+         Std::Debug::print(&8888887777);
+        Std::Debug::print(&fee_x);
+        Std::Debug::print(&fee_y);
+        assert!(fee_x == 39220, 1);
+        assert!(fee_y == 4082, 1);
     }
 }
