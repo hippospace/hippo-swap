@@ -352,13 +352,13 @@ module HippoSwap::StableCurveSwap {
     }
 
     public fun withdraw_liquidity<X, Y>(to_burn: Coin::Coin<LPToken<X, Y>>): (Coin::Coin<X>, Coin::Coin<Y>) acquires StableCurvePoolInfo, LPCapability {
-        let to_burn_value = Coin::value(&to_burn);
+        let to_burn_value = (Coin::value(&to_burn) as u128);
         let swap_pair = borrow_global_mut<StableCurvePoolInfo<X, Y>>(HippoConfig::admin_address());
-        let reserve_x = Coin::value(&swap_pair.reserve_x);
-        let reserve_y = Coin::value(&swap_pair.reserve_y);
-        let total_supply = Option::extract(&mut Coin::supply<LPToken<X, Y>>());
-        let x = to_burn_value * reserve_x / total_supply;
-        let y = to_burn_value * reserve_y / total_supply;
+        let reserve_x = (Coin::value(&swap_pair.reserve_x) as u128);
+        let reserve_y =  (Coin::value(&swap_pair.reserve_y) as u128);
+        let total_supply = (Option::extract(&mut Coin::supply<LPToken<X, Y>>()) as u128);
+        let x = ((to_burn_value * reserve_x / total_supply) as u64);
+        let y = ((to_burn_value * reserve_y / total_supply) as u64);
         burn<X, Y>(to_burn);
         let coin_x = Coin::extract(&mut swap_pair.reserve_x, x);
         let coin_y = Coin::extract(&mut swap_pair.reserve_y, y);

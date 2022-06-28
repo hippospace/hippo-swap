@@ -99,6 +99,84 @@ module HippoSwap::CurveTest {
     }
 
     #[test_only]
+    fun new_transaction_param(
+        amt_x: u64, amt_y: u64, amt_lp: u64,
+        sx: u8, sy: u8, slp: u8, sfx: u8, sfy: u8, sflp: u8,
+        dx: u64, dy: u64, dlp: u64, dfx: u64, dfy: u64, dflp: u64,
+        wsx: u8, wsy: u8, wslp: u8,
+        wdx: u64, wdy: u64, wdlp: u64
+    ): TransactionParams {
+        TransactionParams{
+            amt_x, amt_y, amt_lp,
+            p: PoolDelta{
+                sx, sy, slp, sfx, sfy, sflp,
+                dx, dy, dlp, dfx, dfy, dflp
+            },
+            w: WalletDelta{
+                sx: wsx, sy: wsy, slp: wslp,
+                dx: wdx, dy: wdy, dlp: wdlp
+            },
+        }
+    }
+
+    #[test_only]
+    fun add_param(
+        amt_x: u64, amt_y: u64, dx: u64, dy: u64, dlp: u64, dfx: u64, dfy: u64
+    ): TransactionParams {
+        TransactionParams{
+            amt_x, amt_y, amt_lp: 0,
+            p: PoolDelta{
+                sx: INC, sy: INC, slp: INC, sfx: INC, sfy: INC, sflp: INC,
+                dx, dy, dlp, dfx, dfy, dflp: 0
+            },
+            w: WalletDelta{
+                sx: DEC, sy: DEC, slp: INC,
+                dx: amt_x, dy: amt_y, dlp
+            },
+        }
+    }
+
+    #[test_only]
+    fun swap_param(
+        amt_x: u64, amt_y: u64, dx: u64, dy: u64, dfx: u64, dfy: u64, receive_amt: u64
+    ): TransactionParams {
+        let (sx, sy, wdx, wdy): (u8, u8, u64, u64);
+        if (amt_x>0) {
+            (sx, sy, wdx, wdy) = (INC, DEC, amt_x, receive_amt);
+        } else {
+            (sx, sy, wdx, wdy) = (DEC, INC, receive_amt, amt_y);
+        };
+        TransactionParams{
+            amt_x, amt_y, amt_lp: 0,
+            p: PoolDelta{
+                sx, sy, slp: INC, sfx: INC, sfy: INC, sflp: INC,
+                dx, dy, dlp: 0, dfx, dfy, dflp: 0
+            },
+            w: WalletDelta{
+                sx: sy, sy: sx, slp: INC,
+                dx: wdx, dy: wdy, dlp: 0
+            },
+        }
+    }
+
+    #[test_only]
+    fun remove_param(
+        amt_lp: u64, dx: u64, dy: u64
+    ): TransactionParams {
+        TransactionParams{
+            amt_x: 0, amt_y: 0, amt_lp,
+            p: PoolDelta{
+                sx: DEC, sy: DEC, slp: DEC, sfx: DEC, sfy: DEC, sflp: DEC,
+                dx, dy, dlp: amt_lp, dfx: 0, dfy: 0, dflp: 0
+            },
+            w: WalletDelta{
+                sx: INC, sy: INC, slp: DEC,
+                dx, dy, dlp: amt_lp
+            },
+        }
+    }
+
+    #[test_only]
     public fun test_pool_debug<X, Y>(
         admin: &signer, investor: &signer, swapper: &signer, core: &signer
     ) {
@@ -237,44 +315,32 @@ module HippoSwap::CurveTest {
     public fun test_pool_stable_curve_add_remove(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
         // test_pool_debug<WUSDC, WDAI>(admin, investor, swapper, core);
         let (decimal_x, decimal_y, fee, protocal_fee) = (8, 7, 100, 100000);
-        let add_1 = TransactionParams{
-            amt_x: P8, amt_y: P7, amt_lp: 0,
-            p: PoolDelta{
-                sx: INC, sy: INC, slp: INC, sfx: INC, sfy: INC, sflp: INC,
-                dx: P8, dy: P7, dlp: 2 * P8, dfx: 0, dfy: 0, dflp: 0
-            },
-            w: WalletDelta{
-                sx: DEC, sy: DEC, slp: INC,
-                dx: P8, dy: P7, dlp: 2 * P8
-            },
-        };
-        let add_2 = TransactionParams{
-            amt_x: P8, amt_y: P7, amt_lp: 0,
-            p: PoolDelta{
-                sx: INC, sy: INC, slp: INC, sfx: INC, sfy: INC, sflp: INC,
-                dx: P8, dy: P7, dlp: 2*P8, dfx: 0, dfy: 0, dflp: 0
-            },
-            w: WalletDelta{
-                sx: DEC, sy: DEC, slp: INC,
-                dx: P8, dy: P7, dlp: 2*P8
-            },
-        };
-        let swap = TransactionParams{
-            amt_x: P7, amt_y: 0, amt_lp: 0,
-            p: PoolDelta{
-                sx: INC, sy: INC, slp: INC, sfx: INC, sfy: INC, sflp: INC,
-                dx: P7, dy: P7, dlp: 2 * P8, dfx: 0, dfy: 0, dflp: 0
-            },
-            w: WalletDelta{
-                sx: DEC, sy: DEC, slp: INC,
-                dx: P8, dy: P7, dlp: 2 * P8
-            },
-        };
+        let add_1 = new_transaction_param(
+            P8, P7, 0,
+            INC, INC, INC, INC, INC, INC,
+            P8, P7, 2 * P8, 0, 0, 0,
+            DEC, DEC, INC,
+            P8, P7, 2 * P8
+        );
+        let add_2 = new_transaction_param(
+            P8, P7, 0,
+            INC, INC, INC, INC, INC, INC,
+            P8, P7, 2 * P8, 0, 0, 0,
+            DEC, DEC, INC,
+            P8, P7, 2 * P8
+        );
+        let swap = new_transaction_param(
+            P7, 0, 0,
+            INC, INC, INC, INC, INC, INC,
+            P8, P7, 2 * P8, 0, 0, 0,
+            DEC, DEC, INC,
+            P8, P7, 2 * P8
+        );
         let remove_1 = TransactionParams{
-            amt_x: 0, amt_y: 0, amt_lp: 2*P8,
+            amt_x: 0, amt_y: 0, amt_lp: 2 * P8,
             p: PoolDelta{
                 sx: DEC, sy: DEC, slp: DEC, sfx: INC, sfy: INC, sflp: INC,
-                dx: P8, dy: P7, dlp: 2*P8, dfx: 0, dfy: 0, dflp: 0
+                dx: P8, dy: P7, dlp: 2 * P8, dfx: 0, dfy: 0, dflp: 0
             },
             w: WalletDelta{
                 sx: INC, sy: INC, slp: DEC,
@@ -294,51 +360,92 @@ module HippoSwap::CurveTest {
 
     #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
     public fun test_pool_stable_curve_standard(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
-        // test_pool_debug<WUSDC, WDAI>(admin, investor, swapper, core);
         let (decimal_x, decimal_y, fee, protocal_fee) = (8, 7, 100, 100000);
-        let add_1 = TransactionParams{ amt_x: P8, amt_y: P7, amt_lp: 0, p: PoolDelta{
-                sx: INC, sy: INC, slp: INC, sfx: INC, sfy: INC, sflp: INC,
-                dx: P8, dy: P7, dlp: 2 * P8, dfx: 0, dfy: 0, dflp: 0
-            }, w: WalletDelta{
-                sx: DEC, sy: DEC, slp: INC,
-                dx: P8, dy: P7, dlp: 2 * P8
-            },
-        };
-        let add_2 = TransactionParams{
-            amt_x: P8, amt_y: P7, amt_lp: 0, p: PoolDelta{
-                sx: INC, sy: INC, slp: INC, sfx: INC, sfy: INC, sflp: INC,
-                dx: P8, dy: P7, dlp: 2*P8, dfx: 0, dfy: 0, dflp: 0
-            }, w: WalletDelta{
-                sx: DEC, sy: DEC, slp: INC,
-                dx: P8, dy: P7, dlp: 2*P8
-            },
-        };
-        let swap = TransactionParams{
-            amt_x: P8, amt_y: 0, amt_lp: 0, p: PoolDelta{
-                sx: INC, sy: DEC, slp: INC, sfx: INC, sfy: INC, sflp: INC,
-                dx: P8, dy: 9892580, dlp: 0, dfx: 0, dfy: 98, dflp: 0
-            }, w: WalletDelta{
-                sx: DEC, sy: INC, slp: INC,
-                dx: P8, dy: 9892482, dlp: 0
-            },
-        };
-        let remove_1 = TransactionParams{
-            amt_x: 0, amt_y: 0, amt_lp: 2*P8, p: PoolDelta{
-                sx: DEC, sy: DEC, slp: DEC, sfx: INC, sfy: INC, sflp: INC,
-                dx: 15*P7, dy: 10107420 - 5053710 , dlp: 2*P8, dfx: 0, dfy: 0, dflp: 0
-            }, w: WalletDelta{
-                sx: INC, sy: INC, slp: DEC,
-                dx: 15*P7, dy: 5053710, dlp: 2 * P8
-            },
-        };
+        let add_1 = new_transaction_param(
+            P8, P7, 0, INC, INC, INC, INC, INC, INC, P8, P7, 2 * P8, 0, 0, 0, DEC, DEC, INC, P8, P7, 2 * P8
+        );
+        let add_2 = new_transaction_param(
+            P8, P7, 0, INC, INC, INC, INC, INC, INC, P8, P7, 2 * P8, 0, 0, 0, DEC, DEC, INC, P8, P7, 2 * P8
+        );
+        let swap = new_transaction_param(
+            P8, 0, 0, INC, DEC, INC, INC, INC, INC, P8, 9892580, 0, 0, 98, 0, DEC, INC, INC, P8, 9892482, 0
+        );
+        let remove_1 = new_transaction_param(
+            0, 0, 2 * P8, DEC, DEC, DEC, INC, INC, INC, 15 * P7, 5053710, 2 * P8, 0, 0, 0, INC, INC, DEC, 15 * P7, 5053710, 2 * P8
+        );
         test_pool_case<WUSDC, WDAI>(admin, investor, swapper, core,
-            true, false,
-            POOL_TYPE_STABLE_CURVE,
-            decimal_x, decimal_y, fee, protocal_fee,
-            add_1,
-            add_2,
-            swap,
-            remove_1
+            true, false, POOL_TYPE_STABLE_CURVE, decimal_x, decimal_y, fee, protocal_fee, add_1, add_2, swap, remove_1
         );
     }
+
+
+    #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
+    public fun test_pool_stable_curve_2(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
+        // swap small amount
+        let (decimal_x, decimal_y, fee, protocal_fee) = (8, 7, 100, 100000);
+        let add_1 = new_transaction_param(
+            P8, P7, 0, INC, INC, INC, INC, INC, INC, P8, P7, 2 * P8, 0, 0, 0, DEC, DEC, INC, P8, P7, 2 * P8
+        );
+        let add_2 = new_transaction_param(
+            P8, P7, 0, INC, INC, INC, INC, INC, INC, P8, P7, 2 * P8, 0, 0, 0, DEC, DEC, INC, P8, P7, 2 * P8
+        );
+        let swap = new_transaction_param(
+            P6, 0, 0, INC, DEC, INC, INC, INC, INC, P6,99982, 0, 0, 0, 0, DEC, INC, INC, P6,  99982, 0
+        );
+        let remove_1 = new_transaction_param(
+            0, 0, 2 * P8,
+            DEC, DEC, DEC, INC, INC, INC,
+            15 * P7, 5053710, 2 * P8, 0, 0, 0,
+            INC, INC, DEC,
+            15 * P7, 5053710, 2 * P8
+        );
+        test_pool_case<WUSDC, WDAI>(admin, investor, swapper, core,
+            false, false, POOL_TYPE_STABLE_CURVE, decimal_x, decimal_y, fee, protocal_fee, add_1, add_2, swap, remove_1
+        );
+    }
+
+    #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
+    public fun test_pool_stable_curve_3(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
+        // decimal differ
+        let (decimal_x, decimal_y, fee, protocal_fee) = (8, 6, 100, 100000);
+        let add_1 = add_param(P8, P6, P8, P6, 2 * P8, 0, 0);
+        let add_2 = add_param(P8, P6, P8, P6, 2 * P8, 0, 0);
+        let swap = swap_param(P8, 0, P8, 989258, 0, 9, 989249);
+        let remove_1 = remove_param(2*P8, 15 * P7, 505371);
+        test_pool_case<WUSDC, WDAI>(admin, investor, swapper, core,
+            true, false, POOL_TYPE_STABLE_CURVE, decimal_x, decimal_y, fee, protocal_fee, add_1, add_2, swap, remove_1
+        );
+    }
+
+    #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
+    public fun test_pool_stable_curve_4(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
+        // decimal differ
+        let (decimal_x, decimal_y, fee, protocal_fee) = (10, 6, 100, 100000);
+        let add_1 = add_param(P10, P6, P10, P6, 2 * P10, 0, 0);
+        let add_2 = add_param(P10, P6, P10, P6, 2 * P10, 0, 0);
+        let swap = swap_param(P10, 0, P10, 989258, 0, 9, 989249);
+        let remove_1 = remove_param(2*P10, 15 * P9, 505371);
+        test_pool_case<WUSDC, WDAI>(admin, investor, swapper, core,
+            true, false, POOL_TYPE_STABLE_CURVE, decimal_x, decimal_y, fee, protocal_fee, add_1, add_2, swap, remove_1
+        );
+    }
+
+    #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
+    public fun test_pool_stable_curve_5(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
+        // tiny swap amount
+        let (pool_type, print_debug) = (POOL_TYPE_STABLE_CURVE, true);
+        let (decimal_x, decimal_y, fee, protocal_fee) = (10, 10, 100, 100000);
+        let add_1 = add_param(P10, P10, P10, P10, 2 * P10, 0, 0);
+        let add_2 = add_param(P10, P10, P10, P10, 2 * P10, 0, 0);
+        let swap = swap_param(P4, 0, P4, 9999, 0, 0, 9999);
+        let remove_1 = remove_param(2*P10, P10+5*P3, P10-5*P3);
+        test_pool_case<WUSDC, WDAI>(admin, investor, swapper, core,
+            true, false, pool_type, decimal_x, decimal_y, fee, protocal_fee, add_1, add_2, swap, remove_1
+        );
+        TestShared::fund_for_participants<WUSDC, WDAI>(swapper, 0, P4);
+        TestShared::sync_wallet_save_point<WUSDC, WDAI>(swapper, pool_type);
+        let swap_2 = swap_param(0, P4, 9999, P4, 0, 0, 9999);
+        perform_transaction<WUSDC, WDAI>(swapper, pool_type, SWAP, print_debug, swap_2);
+    }
+
 }
