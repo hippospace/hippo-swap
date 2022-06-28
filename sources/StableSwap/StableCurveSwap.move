@@ -295,7 +295,7 @@ module HippoSwap::StableCurveSwap {
 
         Coin::merge(&mut swap_pair.reserve_x, coins_in);
         let coin_dy = Coin::extract<Y>(&mut swap_pair.reserve_y, charged_amt_dy);
-        let coin_fee = Coin::extract<Y>(&mut coin_dy, dy_admin_fee);
+        let coin_fee = Coin::extract<Y>(&mut swap_pair.reserve_y, dy_admin_fee);
         Coin::merge(&mut swap_pair.fee_y, coin_fee);
         (Coin::zero<X>(), Coin::zero<X>(), coin_dy)
     }
@@ -323,7 +323,7 @@ module HippoSwap::StableCurveSwap {
 
         Coin::merge(&mut swap_pair.reserve_y, coins_in);
         let coin_dx = Coin::extract<X>(&mut swap_pair.reserve_x, charged_amt_dx);
-        let coin_fee = Coin::extract<X>(&mut coin_dx, dx_admin_fee);
+        let coin_fee = Coin::extract<X>(&mut swap_pair.reserve_x, dx_admin_fee);
         Coin::merge(&mut swap_pair.fee_x, coin_fee);
         (Coin::zero<Y>(), coin_dx, Coin::zero<Y>(),)
     }

@@ -65,6 +65,18 @@ module HippoSwap::TestShared {
     const INC: u8 = 0;
     const DEC: u8 = 1;
 
+    const E_RESERVE_X: u64 = 11;
+    const E_RESERVE_Y: u64 = 12;
+    const E_RESERVE_LP: u64 = 13;
+    const E_FEE_X: u64 = 14;
+    const E_FEE_Y: u64 = 15;
+    const E_FEE_LP: u64 = 16;
+
+    const E_WALLET_X: u64 = 21;
+    const E_WALLET_Y: u64 = 22;
+    const E_WALLET_LP: u64 = 23;
+
+
     struct PoolSavePoint<phantom LpTokenType> has key, drop {
         reserve_x: u64,
         reserve_y: u64,
@@ -345,11 +357,16 @@ module HippoSwap::TestShared {
     }
 
     #[test_only]
-    fun assert_delta(sign: u8, delta: u64, current: u64, origin: u64, ) {
+    fun difference(a: u64, b: u64):u64 {
+        if (a>b) a-b else b-a
+    }
+
+    #[test_only]
+    fun assert_delta(sign: u8, delta: u64, current: u64, origin: u64, error_type: u64) {
         if (sign == INC) {
-            assert!(delta == current - origin, E_DELTA_AMOUNT)
+            assert!(difference(delta, current - origin) <= 1, error_type)
         } else {
-            assert!(delta == origin - current, E_DELTA_AMOUNT)
+            assert!(difference(delta, origin - current) <= 1, error_type)
         }
     }
 
@@ -375,12 +392,12 @@ module HippoSwap::TestShared {
         fee_y: u64,
         fee_lp: u64,
     ) {
-        assert_delta(sign_reserve_x, delta_reserve_x, reserve_x, sp.reserve_x);
-        assert_delta(sign_reserve_y, delta_reserve_y, reserve_y, sp.reserve_y);
-        assert_delta(sign_reserve_lp, delta_reserve_lp, reserve_lp, sp.reserve_lp);
-        assert_delta(sign_fee_x, delta_fee_x, fee_x, sp.fee_x);
-        assert_delta(sign_fee_y, delta_fee_y, fee_y, sp.fee_y);
-        assert_delta(sign_fee_lp, delta_fee_lp, fee_lp, sp.fee_lp);
+        assert_delta(sign_reserve_x, delta_reserve_x, reserve_x, sp.reserve_x, E_RESERVE_X);
+        assert_delta(sign_reserve_y, delta_reserve_y, reserve_y, sp.reserve_y, E_RESERVE_Y);
+        assert_delta(sign_reserve_lp, delta_reserve_lp, reserve_lp, sp.reserve_lp, E_RESERVE_LP);
+        assert_delta(sign_fee_x, delta_fee_x, fee_x, sp.fee_x, E_FEE_X);
+        assert_delta(sign_fee_y, delta_fee_y, fee_y, sp.fee_y, E_FEE_Y);
+        assert_delta(sign_fee_lp, delta_fee_lp, fee_lp, sp.fee_lp, E_FEE_LP);
     }
 
     #[test_only]
@@ -459,9 +476,9 @@ module HippoSwap::TestShared {
     ) acquires WalletBalanceSavePoint {
         let addr = Signer::address_of(sender);
         let sp = borrow_global_mut<WalletBalanceSavePoint>(addr);
-        assert_delta(sign_coin_x, delta_coin_x, balance_x, sp.coin_x);
-        assert_delta(sign_coin_y, delta_coin_y, balance_y, sp.coin_y);
-        assert_delta(sign_coin_lp, delta_coin_lp, balance_lp, sp.coin_lp);
+        assert_delta(sign_coin_x, delta_coin_x, balance_x, sp.coin_x, E_WALLET_X);
+        assert_delta(sign_coin_y, delta_coin_y, balance_y, sp.coin_y, E_WALLET_Y);
+        assert_delta(sign_coin_lp, delta_coin_lp, balance_lp, sp.coin_lp, E_WALLET_LP);
     }
 
     #[test_only]

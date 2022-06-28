@@ -456,8 +456,10 @@ module HippoSwap::StableCurveScripts {
         StableCurveSwap::swap_x_to_exact_y<MockCoin::WUSDC, MockCoin::WUSDT>(admin, 200000, admin_addr);
 
         let balance = Coin::balance<MockCoin::WUSDT>(admin_addr);
-        assert!(balance == 200097, 1);
+
+        assert!(balance == 200217, 1);
         let (_, _, _, fee_amt_x, fee_amt_y, _, _, _, _, _, _, _, _, _) = StableCurveSwap::get_pool_info<MockCoin::WUSDC, MockCoin::WUSDT>();
+
         assert!(fee_amt_x == 74, 1);
         assert!(fee_amt_y == 195, 1); // increased 120 = 200000 * 0.003 * 0.2
 
@@ -465,7 +467,8 @@ module HippoSwap::StableCurveScripts {
         StableCurveSwap::swap_y_to_exact_x<MockCoin::WUSDC, MockCoin::WUSDT>(admin, 200000, admin_addr);
 
         let balance = Coin::balance<MockCoin::WUSDC>(admin_addr);
-        assert!(balance == 198467, 1);      // nearly 2 % loss
+
+        assert!(balance == 198587, 1);      // nearly 2 % loss
         let (_, _, _, fee_x, fee_y, _, _, _, _, _, _, _, _, _) = StableCurveSwap::get_pool_info<MockCoin::WUSDC, MockCoin::WUSDT>();
         assert!(fee_x == 193, 1);
         assert!(fee_y == 195, 1);
@@ -475,7 +478,8 @@ module HippoSwap::StableCurveScripts {
         StableCurveSwap::swap_x_to_exact_y<MockCoin::WUSDC, MockCoin::WUSDT>(admin, 20000000, admin_addr);
 
         let balance = Coin::balance<MockCoin::WUSDT>(admin_addr);
-        assert!(balance == 1494324, 1); // Seems that the pool was exhausted, and the lp earn a lot.
+
+        assert!(balance == 1495223, 1); // Seems that the pool was exhausted, and the lp earn a lot.
         let (_, _, _, fee_x, fee_y, _, _, _, _, _, _, _, _, _) = StableCurveSwap::get_pool_info<MockCoin::WUSDC, MockCoin::WUSDT>();
         assert!(fee_x == 193, 1);
         assert!(fee_y == 1094, 1);
@@ -486,9 +490,9 @@ module HippoSwap::StableCurveScripts {
 
         let balance = StableCurveSwap::balance<MockCoin::WUSDC, MockCoin::WUSDT>(admin_addr);
 
-        assert!(balance == 23861095, 1);
+        assert!(balance == 25338477, 1);
         let (_, _, _, fee_x, fee_y, _, _, _, _, _, _, _, _, _) = StableCurveSwap::get_pool_info<MockCoin::WUSDC, MockCoin::WUSDT>();
-        assert!(fee_x == 39220, 1);
-        assert!(fee_y == 4082, 1);
+        assert!(fee_x == 42969, 1);
+        assert!(fee_y == 4083, 1);
     }
 }
