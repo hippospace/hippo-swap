@@ -284,5 +284,29 @@ module CPScripts {
         assert!(Coin::balance<MockCoin::WBTC>(Signer::address_of(user)) >= btc_amt * 99 / 100, 0);
 
     }
+
+     #[test_only]
+     public fun swap<X, Y>(
+        sender: &signer,
+        x_in: u64,
+        y_in: u64,
+        x_min_out: u64,
+        y_min_out: u64,
+    ) {
+        assert!(!(x_in > 0 && y_in > 0), E_SWAP_ONLY_ONE_IN_ALLOWED);
+        assert!(!(x_min_out > 0 && y_min_out > 0), E_SWAP_ONLY_ONE_OUT_ALLOWED);
+        // X to Y
+        if (x_in > 0) {
+            let y_out = CPSwap::swap_x_to_exact_y<X, Y>(sender, x_in, Signer::address_of(sender));
+            assert!(y_out >= y_min_out, E_OUTPUT_LESS_THAN_MIN);
+        }
+        else if (y_in > 0) {
+            let x_out = CPSwap::swap_y_to_exact_x<X, Y>(sender, y_in, Signer::address_of(sender));
+            assert!(x_out >= x_min_out, E_OUTPUT_LESS_THAN_MIN);
+        }
+        else {
+            assert!(false, E_SWAP_NONZERO_INPUT_REQUIRED);
+        }
+    }
 }
 }

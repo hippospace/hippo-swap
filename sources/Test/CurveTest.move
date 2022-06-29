@@ -593,4 +593,22 @@ module HippoSwap::CurveTest {
             perform_transaction<WUSDC, WDAI>(swapper, pool_type, SWAP, true, rev_swap_1);
         };
     }
+
+
+    #[test(admin = @HippoSwap, investor = @0x2FFF, swapper = @0x2FFE, core = @0xa550c18)]
+    public fun test_pool_stable_curve_deviant(admin: &signer, investor: &signer, swapper: &signer, core: &signer) {
+        // tiny swap amount
+        let (pool_type, print_debug) = (POOL_TYPE_STABLE_CURVE, true);
+        let (decimal_x, decimal_y, fee, protocal_fee) = (8, 6, 100, 100000);
+        let add_1 = add_param(P17, P15, P17, P15, 2 * P17, 0, 0);
+        let add_2 = add_param(P17, 2*P15, 99999750426479329, 1999997495735207, 299824406454391189, 249573520671,  2504264793);
+        let swap = swap_param(P8, 0, P8,  1007033, 0, 10,  1007023);
+
+        let remove_1 = remove_param(2 * P10,  8002800501, 120042057);
+        test_pool_case<WUSDC, WDAI>(admin, investor, swapper, core,
+            print_debug, false, pool_type, decimal_x, decimal_y, fee, protocal_fee, add_1, add_2, swap, remove_1
+        );
+        let remove_2 = remove_param(  499824386454391189,    199999742523678828,   2999997374686117);
+        perform_transaction<WUSDC, WDAI>(swapper, pool_type, REMOVE_LIQUIDITY, true, remove_2);
+    }
 }
