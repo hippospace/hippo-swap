@@ -2,7 +2,7 @@
 
 function run_test {
     printf "🚀🚀🚀Running Tests NOW\n"
-    af-cli package test --coverage --dev
+    af-cli package test --coverage --dev -i 1000000
 
     if [ $? -ne 0 ]; then
         printf "❌❌❌ Oops, not all tests passed ❌❌❌"

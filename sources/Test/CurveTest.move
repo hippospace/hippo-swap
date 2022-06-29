@@ -590,7 +590,7 @@ module HippoSwap::CurveTest {
             Std::Debug::print(&i);
             let ddx = i / 256;          // Slippage
             let rev_swap_1 = swap_param(0, P6, P8 - 8997 - ddx , P6, 1000, 0, P8 - 10000 + 3 - ddx);  // swap 1 doller
-            perform_transaction<WUSDC, WDAI>(swapper, pool_type, SWAP, true, rev_swap_1);
+            perform_transaction<WUSDC, WDAI>(swapper, pool_type, SWAP, false, rev_swap_1);
         };
     }
 
@@ -609,6 +609,6 @@ module HippoSwap::CurveTest {
             print_debug, false, pool_type, decimal_x, decimal_y, fee, protocal_fee, add_1, add_2, swap, remove_1
         );
         let remove_2 = remove_param(  499824386454391189,    199999742523678828,   2999997374686117);
-        perform_transaction<WUSDC, WDAI>(swapper, pool_type, REMOVE_LIQUIDITY, true, remove_2);
+        perform_transaction<WUSDC, WDAI>(investor, pool_type, REMOVE_LIQUIDITY, true, remove_2);
     }
 }
